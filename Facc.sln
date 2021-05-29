@@ -5,7 +5,12 @@ VisualStudioVersion = 16.0.31321.278
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Facc", "Facc\Facc.csproj", "{C7D3369C-0D5E-47E1-8C89-B6516941FDC0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Facc.Example", "Facc.Example\Facc.Example.csproj", "{69CCCACD-01E9-466F-A6D1-29B9EA53AB5E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Facc.Example", "Facc.Example\Facc.Example.csproj", "{69CCCACD-01E9-466F-A6D1-29B9EA53AB5E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{2770B937-6BBF-4643-AC5A-A42CEEA2EDA2}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
