@@ -37,7 +37,7 @@ _generator.Generate (); // 生成AST解析文件
 ```csharp
 var _root = AstParser.Parse<ASTs.ExprAST> ("3+2*5-4");
 _root.PrintTree (0);
-``
+```
 
 ## 文档
 
