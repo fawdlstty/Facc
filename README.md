@@ -6,6 +6,39 @@ Facc 是一种自制语言的工具，通过极简语法描述文法，自动生
 
 编译原理自始至终都是非常难学的知识，虽然网上能找到各种各样的教程及文档，但也极少有开发者深入研究。本仓库作为另一种方案，以更简单的视角来解读编译原理，提供完善教程协助用户自主完成一个编译器。
 
+## 开始
+
+首先，NuGet上安装Facc。
+
+生成AST：
+
+```csharp
+var _grammar = @"	// 语法描述字符串
+					// 方括号代表匹配其中任一字符
+num					::= [0-9]+
+					// 单引号或双引号代表匹配整个字符串，“|”代表“或”关系，匹配任一串字符串
+op2_sign			::= '+' | '-' | '*' | '/'
+					// 空格连接代表“与”关系，所有元素必须同时存在
+op0_expr			::= '(' expr ')'
+					// 匹配 1+2*3-4 这样的字符串
+op2_expr			::= expr (op2_sign expr)+
+					// 表达式允许纯数字、括号或四则运算字符串
+expr				::= num | op0_expr | op2_expr
+";
+string _path = "D:\\ASTs"; // AST解析文件生成路径
+string _namespace = "Facc.Example.ASTs"; // 生成的AST解析文件的命名空间
+var _generator = new AstGenerator (_grammar, _path, _namespace);
+_generator.ClearPath (); // 清空指定路径下的所有文件
+_generator.Generate (); // 生成AST解析文件
+```
+
+执行生成的AST代码，解析文法：
+
+```csharp
+var _root = AstParser.Parse<ASTs.ExprAST> ("3+2*5-4");
+_root.PrintTree (0);
+``
+
 ## 文档
 
 - [第一章：语言基础](docs/chapter_1.md)

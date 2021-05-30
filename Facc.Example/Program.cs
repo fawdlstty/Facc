@@ -25,8 +25,8 @@ expr				::= num | op0_expr | op2_expr
 		}
 
 		static void parse () {
-			var _tree = AstParser.Parse<ASTs.ExprAST> ("3+2*5-4");
-			_tree.PrintTree (0);
+			var _root = AstParser.Parse<ASTs.ExprAST> ("3+2*5-4");
+			_root.PrintTree (0);
 		}
 
 		static void Main (string [] args) {
