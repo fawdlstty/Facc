@@ -36,8 +36,8 @@ _generator.Generate (); // 生成AST解析文件
 
 ```csharp
 var _ast_parser = new AstParser ();
-if (_ast_parser.Parse<ASTs.ExprAST> ("3+2*5-4")) {
-    var _root = _ast_parser.GetAST<ASTs.ExprAST> ();
+var _root = _ast_parser.Parse<ASTs.ExprAST> ("3+2*5-4+(123213213");
+if (_root != null) {
     Console.WriteLine ();
     _root.PrintTree (0);
 } else {
