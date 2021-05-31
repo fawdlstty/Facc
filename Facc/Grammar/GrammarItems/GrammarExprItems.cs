@@ -266,6 +266,7 @@ namespace Facc.Grammar.GrammarItems {
 				if (ChildItems[i] is GrammarExprItems _items) {
 					if (_items.IsBList) {
 						_append ($"IEnumerator<int> _try_parse{Suffix}_{i} (int _pos) {{		");
+						_append ($"	Parser.ErrorPos = _pos;										");
 						_append ($"	var _o = new {ClassName}{Suffix}_{i} {{ Parser = Parser }};	");
 						_append ($"	var _enum = _o.TryParse (_pos);								");
 						_append ($"	int _list_pos = Value_{i}.Count;							");
@@ -283,6 +284,7 @@ namespace Facc.Grammar.GrammarItems {
 						_append ("}																");
 					} else {
 						_append ($"IEnumerator<int> _try_parse{Suffix}_{i} (int _pos) {{		");
+						_append ($"	Parser.ErrorPos = _pos;										");
 						_append ($"	var _o = new {ClassName}{Suffix}_{i} {{ Parser = Parser }};	");
 						_append ($"	var _enum = _o.TryParse (_pos);								");
 						_append ("	while (_enum.MoveNext ()) {									");

@@ -6,37 +6,65 @@ using System.Threading.Tasks;
 
 namespace Facc.Parser {
 	public class AstParser {
-		public static T Parse<T> (string code) where T : IAST, new () {
-			var _parser = new AstParser (code);
-			var _t = new T { Parser = _parser };
+		public bool Parse<T> (string code) where T : IAST, new () {
+			m_code = code;
+			var _t = new T { Parser = this };
 			var _enum = _t.TryParse (0);
-			while (true) {
-				if (_enum.MoveNext ()) {
-					var _ast = _enum.Current;
-					if (_ast == code.Length)
-						return _t;
+			while (_enum.MoveNext ()) {
+				if (_enum.Current == code.Length) {
+					m_error_pos = -1;
+					m_ast = _t;
+					m_ast_type = typeof (T).FullName;
+					return true;
 				}
 			}
-			throw new Exception ("解析失败");
+			return false;
 		}
 
-		private string Code { init; get; } = "";
-		private AstParser (string code) => Code = code;
+		private string m_code = "";
+
+		private string m_ast_type = "";
+		private object m_ast = null;
+		public T GetAST<T> () {
+			if (m_error_pos != -1)
+				throw new Exception ("The AST was not parsed successfully and could not be get.");
+			if (m_ast_type != typeof (T).FullName)
+				throw new Exception ("Type not match.");
+			return (T) m_ast;
+		}
+
+		private int m_error_pos = -1;
+		public int ErrorPos { set => m_error_pos = Math.Max (value, m_error_pos); }
+		public ParseError Error {
+			get {
+				if (m_error_pos == -1)
+					throw new Exception ("No any error");
+				int _line = 1;
+				int _start_pos = 0, _end_pos = m_code.IndexOf ('\n') + 1;
+				while (_end_pos < m_error_pos) {
+					if (_end_pos == 0)
+						return new ParseError (m_code, m_error_pos, _line, _start_pos);
+					_start_pos = _end_pos;
+					_end_pos = m_code.IndexOf ('\n', _start_pos) + 1;
+				}
+				return new ParseError (m_code, m_error_pos, _line, _start_pos);
+			}
+		}
 
 
 
 		public char? TryGetChar (int _pos, Func<char, bool> _check) {
-			if (_pos >= Code.Length)
+			if (_pos >= m_code.Length)
 				return null;
-			if (!_check (Code[_pos]))
+			if (!_check (m_code[_pos]))
 				return null;
-			return Code[_pos];
+			return m_code[_pos];
 		}
 
 		public bool TryMatchString (int _pos, string _s) {
-			if (Code.Length < _pos + _s.Length)
+			if (m_code.Length < _pos + _s.Length)
 				return false;
-			return Code[_pos..(_pos + _s.Length)] == _s;
+			return m_code[_pos..(_pos + _s.Length)] == _s;
 		}
 
 

@@ -16,6 +16,7 @@ namespace Facc.Grammar.GrammarItems {
 			StringBuilder _sb = new StringBuilder ();
 			Action<string> _append = (s) => _sb.Append (new string ('\t', 2)).Append (s.TrimEnd ()).Append ("\r\n");
 			_append ($"IEnumerator<int> _try_parse{Suffix} (int _pos) {{		");
+			_append ($"	Parser.ErrorPos = _pos;									");
 			_append ($"	if (Parser.TryMatchString (_pos, \"{Content}\")) {{		");
 			_append ($"		Value{Suffix} = \"{Content}\";						");
 			_append ($"		yield return _pos + Value{Suffix}.Length;			");

@@ -13,6 +13,7 @@ namespace Facc.Grammar.GrammarItems {
 			StringBuilder _sb = new StringBuilder ();
 			Action<string> _append = (s) => _sb.Append (new string ('\t', 2)).Append (s.TrimEnd ()).Append ("\r\n");
 			_append ($"IEnumerator<int> _try_parse{Suffix} (int _pos) {{		");
+			_append ($"	Parser.ErrorPos = _pos;									");
 			_append ($"	var _o = new {NonTerminalName} {{ Parser = Parser }};	");
 			_append ($"	var _enum = _o.TryParse (_pos);							");
 			_append ("	while (_enum.MoveNext ()) {								");

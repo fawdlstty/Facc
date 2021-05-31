@@ -17,9 +17,10 @@ namespace Facc.Grammar.GrammarItems {
 			Action<string> _append = (s) => _sb.Append (new string ('\t', 2)).Append (s.TrimEnd ()).Append ("\r\n");
 			if (RepeatType.max_1 ()) {
 				_append ($"IEnumerator<int> _try_parse{Suffix} (int _pos) {{						");
+				_append ($"	Parser.ErrorPos = _pos;													");
 				_append ($"	char? _ch;																");
 				_append ($"	Func<char, bool> _check{Suffix} = (_c)=> {_get_compare_char ()};		");
-				_append ($"	if ((_ch = Parser.TryGetChar (_pos, _check{Suffix})).HasValue) {{	");
+				_append ($"	if ((_ch = Parser.TryGetChar (_pos, _check{Suffix})).HasValue) {{		");
 				_append ($"		Value{Suffix} = $\"{{_ch.Value}}\";									");
 				_append ($"		yield return _pos + 1;												");
 				_append ($"		Value{Suffix} = \"\";												");
@@ -30,6 +31,7 @@ namespace Facc.Grammar.GrammarItems {
 				_append ("}																			");
 			} else {
 				_append ($"IEnumerator<int> _try_parse{Suffix} (int _pos) {{						");
+				_append ($"	Parser.ErrorPos = _pos;													");
 				_append ($"	Value{Suffix} = \"\";													");
 				_append ("	char? _ch;																");
 				_append ("	int _pos0 = _pos;														");

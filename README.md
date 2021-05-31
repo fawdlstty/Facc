@@ -35,8 +35,18 @@ _generator.Generate (); // 生成AST解析文件
 执行生成的AST代码，解析文法：
 
 ```csharp
-var _root = AstParser.Parse<ASTs.ExprAST> ("3+2*5-4");
-_root.PrintTree (0);
+var _ast_parser = new AstParser ();
+if (_ast_parser.Parse<ASTs.ExprAST> ("3+2*5-4")) {
+    var _root = _ast_parser.GetAST<ASTs.ExprAST> ();
+    Console.WriteLine ();
+    _root.PrintTree (0);
+} else {
+    var _err =_ast_parser.Error;
+    Console.WriteLine ();
+    Console.WriteLine ($"Error in Line {_err.Line}: {_err.ErrorInfo}");
+    Console.WriteLine (_err.LineCode);
+    Console.WriteLine ($"{new string (' ', _err.LinePos)}^");
+}
 ```
 
 ## 文档
