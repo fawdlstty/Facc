@@ -29,6 +29,7 @@ namespace Facc.Example.ASTs {
 
 
 		IEnumerator<int> _try_parse_0 (int _pos) {
+			Parser.ErrorPos = _pos;
 			var _o = new ExprAST { Parser = Parser };
 			var _enum = _o.TryParse (_pos);
 			while (_enum.MoveNext ()) {
@@ -39,6 +40,7 @@ namespace Facc.Example.ASTs {
 		}
 
 		IEnumerator<int> _try_parse_1 (int _pos) {
+			Parser.ErrorPos = _pos;
 			var _o = new Op2ExprAST_1 { Parser = Parser };
 			var _enum = _o.TryParse (_pos);
 			int _list_pos = Value_1.Count;
@@ -90,6 +92,7 @@ namespace Facc.Example.ASTs {
 
 
 		IEnumerator<int> _try_parse_1_0 (int _pos) {
+			Parser.ErrorPos = _pos;
 			var _o = new Op2SignAST { Parser = Parser };
 			var _enum = _o.TryParse (_pos);
 			while (_enum.MoveNext ()) {
@@ -101,6 +104,7 @@ namespace Facc.Example.ASTs {
 
 
 		IEnumerator<int> _try_parse_1_1 (int _pos) {
+			Parser.ErrorPos = _pos;
 			var _o = new ExprAST { Parser = Parser };
 			var _enum = _o.TryParse (_pos);
 			while (_enum.MoveNext ()) {

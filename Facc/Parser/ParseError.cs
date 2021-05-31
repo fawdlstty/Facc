@@ -18,7 +18,7 @@ namespace Facc.Parser {
 				if (LineCode.Length > 0 && LineCode[^1] == '\r')
 					LineCode = LineCode[..^1];
 			}
-			ErrorInfo = $"Invalid Character '{_code[_error_pos]}'";
+			ErrorInfo = $"Invalid Character '{_code[_error_pos - (_error_pos == _code.Length ? 1 : 0)]}'";
 		}
 
 		public int ErrorPos { init; get; }

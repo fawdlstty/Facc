@@ -26,6 +26,7 @@ namespace Facc.Example.ASTs {
 
 
 		IEnumerator<int> _try_parse_0 (int _pos) {
+			Parser.ErrorPos = _pos;
 			Value_0 = "";
 			char? _ch;
 			int _pos0 = _pos;
