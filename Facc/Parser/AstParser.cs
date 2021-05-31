@@ -6,32 +6,20 @@ using System.Threading.Tasks;
 
 namespace Facc.Parser {
 	public class AstParser {
-		public bool Parse<T> (string code) where T : IAST, new () {
+		public T Parse<T> (string code) where T : IAST, new () {
 			m_code = code;
 			var _t = new T { Parser = this };
 			var _enum = _t.TryParse (0);
 			while (_enum.MoveNext ()) {
 				if (_enum.Current == code.Length) {
 					m_error_pos = -1;
-					m_ast = _t;
-					m_ast_type = typeof (T).FullName;
-					return true;
+					return _t;
 				}
 			}
-			return false;
+			return default;
 		}
 
 		private string m_code = "";
-
-		private string m_ast_type = "";
-		private object m_ast = null;
-		public T GetAST<T> () {
-			if (m_error_pos != -1)
-				throw new Exception ("The AST was not parsed successfully and could not be get.");
-			if (m_ast_type != typeof (T).FullName)
-				throw new Exception ("Type not match.");
-			return (T) m_ast;
-		}
 
 		private int m_error_pos = -1;
 		public int ErrorPos { set => m_error_pos = Math.Max (value, m_error_pos); }
