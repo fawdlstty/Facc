@@ -34,6 +34,7 @@ namespace Facc.Parser {
 						return new ParseError (m_code, m_error_pos, _line, _start_pos);
 					_start_pos = _end_pos;
 					_end_pos = m_code.IndexOf ('\n', _start_pos) + 1;
+					++_line;
 				}
 				return new ParseError (m_code, m_error_pos, _line, _start_pos);
 			}

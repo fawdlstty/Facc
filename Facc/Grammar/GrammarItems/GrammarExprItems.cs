@@ -41,7 +41,7 @@ namespace Facc.Grammar.GrammarItems {
 		// 当前对象为无限匹配列表类型，代表匹配值为List<>类型
 		public bool IsBList {
 			get {
-				return (ListType == ExprItemListType.All && (RepeatType == EbnfExprItemRepeatType._0_to_N || RepeatType == EbnfExprItemRepeatType._1_to_N));
+				return RepeatType == EbnfExprItemRepeatType._0_to_N || RepeatType == EbnfExprItemRepeatType._1_to_N;
 			}
 		}
 
