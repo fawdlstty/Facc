@@ -269,8 +269,8 @@ namespace Facc.Grammar.GrammarItems {
 						_append ($"	Parser.ErrorPos = _pos;										");
 						_append ($"	var _o = new {ClassName}{Suffix}_{i} {{ Parser = Parser }};	");
 						_append ($"	var _enum = _o.TryParse (_pos);								");
-						_append ($"	int _list_pos = Value_{i}.Count;							");
 						_append ("	while (_enum.MoveNext ()) {									");
+						_append ($"		int _list_pos = Value_{i}.Count;						");
 						_append ($"		Value_{i}.Add (_o);										");
 						_append ("		yield return _enum.Current;								");
 						_append ($"		var _enum1 = _try_parse{Suffix}_{i} (_enum.Current);	");

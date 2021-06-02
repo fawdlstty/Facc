@@ -63,11 +63,8 @@ namespace Facc.Grammar {
 				if (_ebnf_line == "")
 					continue;
 				_p = _ebnf_line.IndexOf ("::=");
-				if (_p == -1) {
-					Console.WriteLine ("解析错误：从ebnf表达式中无法找到元素[::=]。");
-					Console.WriteLine ($"错误行：{_ebnf_line}");
-					break;
-				}
+				if (_p == -1)
+					throw new Exception ($"从ebnf表达式中无法找到元素[::=]。错误行：{_ebnf_line}");
 				string _id = _ebnf_line[0.._p].Trim ();
 				string _expr = _ebnf_line[(_p+3)..].Trim ();
 				//
@@ -76,7 +73,7 @@ namespace Facc.Grammar {
 				if (_id [0] >= '0' && _id[0] <= '9')
 					throw new Exception ("非终结符名称不可以数字开头");
 				foreach (char _ch in _id) {
-					if (!((_ch >= '0' && _ch <= '9') || (_ch >= 'a' && _ch <= 'z') || (_ch >= 'A' && _ch <= 'Z') || _ch == '_'))
+					if (!((_ch >= '0' && _ch <= '9') || (_ch >= 'a' && _ch <= 'z') || _ch == '_'))
 						throw new Exception ($"非终结符【{_id}】名称中不允许出现符号【{_ch}】");
 				}
 				if (string.IsNullOrEmpty (_expr))
