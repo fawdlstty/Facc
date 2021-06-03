@@ -50,7 +50,7 @@ namespace Facc.Grammar.GrammarItems {
 			return _sb.ToString ();
 		}
 
-		public string IsValidExpr () => (RepeatType == EbnfExprItemRepeatType._0_to_1 || RepeatType == EbnfExprItemRepeatType._0_to_N) ? "true" : $"!string.IsNullOrEmpty (Value{Suffix})";
+		public string IsValidExpr () => RepeatType.min_0 () ? "true" : $"!string.IsNullOrEmpty (Value{Suffix})";
 
 		public string PrintTree () => $"Console.WriteLine ($\"{{new string (' ', (_indent + 1) * 4)}}[{{Value{Suffix}}}]\");";
 
@@ -67,7 +67,7 @@ namespace Facc.Grammar.GrammarItems {
 						'u' => 6,
 						_ => 2,
 					};
-					_chars.Add ($"{Content[i..(i + _len)]}");
+					_chars.Add (Content[i..(i + _len)]);
 					i += _len - 1;
 				} else {
 					_chars.Add ($"{Content[i]}");

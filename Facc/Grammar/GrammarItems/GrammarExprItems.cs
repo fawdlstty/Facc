@@ -23,38 +23,8 @@ namespace Facc.Grammar.GrammarItems {
 		public ExprItemListType ListType { get; set; } = ExprItemListType.Unknown;
 		public bool InitRecognize { get; set; } = true;
 
-		// 当前对象或子对象为无限匹配列表类型，代表匹配值为List<>类型
-		public bool IsBListRevursive {
-			get {
-				if (IsBList)
-					return true;
-				foreach (var _item in ChildItems) {
-					if (_item is GrammarExprItems _items) {
-						if (_items.IsBListRevursive)
-							return true;
-					}
-				}
-				return false;
-			}
-		}
-
 		// 当前对象为无限匹配列表类型，代表匹配值为List<>类型
-		public bool IsBList {
-			get {
-				return RepeatType == EbnfExprItemRepeatType._0_to_N || RepeatType == EbnfExprItemRepeatType._1_to_N;
-			}
-		}
-
-		public bool IsContainsCharTerm {
-			get {
-				foreach (var _item in ChildItems) {
-					if (_item is TerminalCharItem) {
-						return true;
-					}
-				}
-				return false;
-			}
-		}
+		public bool IsBList { get => RepeatType.max_N (); }
 
 		public static GrammarExprItems ParseItems (string _ebnf_id, string _class_name, ref string _expr) {
 			var _items = new GrammarExprItems { EbnfId = _ebnf_id, ClassName = _class_name, Expr = _expr };
@@ -82,7 +52,7 @@ namespace Facc.Grammar.GrammarItems {
 							'?' => EbnfExprItemRepeatType._0_to_1,
 							_ => EbnfExprItemRepeatType._1,
 						};
-						if (_items.RepeatType != EbnfExprItemRepeatType._1)
+						if (!_items.RepeatType.is_1 ())
 							_expr = _expr[1..].Trim ();
 					} else {
 						_items.RepeatType = EbnfExprItemRepeatType._1;
@@ -104,7 +74,7 @@ namespace Facc.Grammar.GrammarItems {
 						};
 					}
 					_expr = _expr[(_p + 1)..].Trim ();
-					if (_terminal.RepeatType != EbnfExprItemRepeatType._1)
+					if (!_terminal.RepeatType.is_1 ())
 						_expr = _expr[1..].Trim ();
 					_terminal.Suffix = $"{_items.Suffix}_{_items.ChildItems.Count}";
 					_items.ChildItems.Add (_terminal);
@@ -120,13 +90,13 @@ namespace Facc.Grammar.GrammarItems {
 						};
 					}
 					_expr = _expr[(_p + 1)..].Trim ();
-					if (_terminal.RepeatType != EbnfExprItemRepeatType._1)
+					if (!_terminal.RepeatType.is_1 ())
 						_expr = _expr[1..].Trim ();
 					_terminal.Suffix = $"{_items.Suffix}_{_items.ChildItems.Count}";
 					_items.ChildItems.Add (_terminal);
 				} else if (_expr[0] == '(') {
 					// range
-					var _nonterminal_items = ParseItems ($"[part of] {_ebnf_id}", $"{_items.ClassName}", ref _expr);
+					var _nonterminal_items = ParseItems ($"[part of] {_ebnf_id}", _items.ClassName, ref _expr);
 					_nonterminal_items.InitRecognize = false;
 					_expr = _expr.Trim ();
 					_nonterminal_items.Suffix = $"{_items.Suffix}_{_items.ChildItems.Count}";
@@ -150,7 +120,7 @@ namespace Facc.Grammar.GrammarItems {
 							'?' => EbnfExprItemRepeatType._0_to_1,
 							_ => EbnfExprItemRepeatType._1
 						};
-						if (_nonterminal.RepeatType != EbnfExprItemRepeatType._1)
+						if (!_nonterminal.RepeatType.is_1 ())
 							_expr = _expr [1..];
 					}
 					_expr = _expr.Trim ();
@@ -161,7 +131,7 @@ namespace Facc.Grammar.GrammarItems {
 				// 处理连接符
 				if (string.IsNullOrEmpty (_expr))
 					break;
-				if (_expr.Length > 0 && _expr [0] == '|') {
+				if (_expr [0] == '|') {
 					if (_items.ListType == ExprItemListType.Unknown || _items.ListType == ExprItemListType.Any) {
 						_items.ListType = ExprItemListType.Any;
 					} else if (_expr [0] != ')') {
@@ -213,7 +183,7 @@ namespace Facc.Grammar.GrammarItems {
 					_sb.Append ("\r\n\r\n").Append (_items.ClassCode ());
 				}
 			}
-			return $"{_sb}";
+			return _sb.ToString ();
 		}
 
 		public string GetClearStrings () {
@@ -315,7 +285,7 @@ namespace Facc.Grammar.GrammarItems {
 				throw new NotImplementedException ();
 			} else if (ListType == ExprItemListType.Any) {
 				return $"ValidIndex{Suffix} >= 0";
-			} if (RepeatType == EbnfExprItemRepeatType._0_to_1 || RepeatType == EbnfExprItemRepeatType._0_to_N) {
+			} if (RepeatType.min_0 ()) {
 				return "true";
 			} else if (ChildItems.Count == 1) {
 				if (ChildItems [0] is TerminalCharItem || ChildItems [0] is TerminalStringItem) {
@@ -330,20 +300,20 @@ namespace Facc.Grammar.GrammarItems {
 					_sb.Append (i > 0 ? " && " : "");
 					if (ChildItems [i] is GrammarExprItems _items) {
 						if (_items.IsBList) {
-							if (_items.RepeatType == EbnfExprItemRepeatType._1_to_N) {
+							if (_items.RepeatType.is_1N ()) {
 								_sb.Append ($"Value{Suffix}_{i}.Count > 0");
 							} else {
 								_sb.Append ("true");
 							}
 						} else {
-							if (ChildItems[i].RepeatType == EbnfExprItemRepeatType._0_to_1 || ChildItems[i].RepeatType == EbnfExprItemRepeatType._0_to_N) {
+							if (ChildItems[i].RepeatType.min_0 ()) {
 								_sb.Append ("true");
 							} else {
 								_sb.Append ($"Value{Suffix}_{i}.IsValid ()");
 							}
 						}
 					} else {
-						if (ChildItems[i].RepeatType == EbnfExprItemRepeatType._0_to_1 || ChildItems[i].RepeatType == EbnfExprItemRepeatType._0_to_N) {
+						if (ChildItems[i].RepeatType.min_0 ()) {
 							_sb.Append ("true");
 						} else {
 							_sb.Append (ChildItems[i].IsValidExpr ());
