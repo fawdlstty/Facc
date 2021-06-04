@@ -43,7 +43,7 @@ namespace Facc.Grammar.GrammarItems {
 				if (_expr[0] == ')') {
 					_expr = _expr [1..].Trim ();
 					if (!_is_in_quot)
-						throw new NotImplementedException ();
+						throw new Exception ("'('、')' 字符必须一一对应");
 
 					if (_expr.Length > 0) {
 						_items.RepeatType = _expr[0] switch {
@@ -195,8 +195,6 @@ namespace Facc.Grammar.GrammarItems {
 		}
 
 		public string GenerateTryParse () {
-			if (ClassName == "IntValAST")
-				ClassName = ClassName;
 			if (ChildItems.Count == 0)
 				throw new Exception ("表达式对象列表不存在");
 
@@ -224,7 +222,7 @@ namespace Facc.Grammar.GrammarItems {
 				}
 			}
 
-			if (InitRecognize && _sb[^2] == '\r' && _sb[^1] == '\n')
+			while (InitRecognize && _sb[^2] == '\r' && _sb[^1] == '\n')
 				_sb.Remove (_sb.Length - 2, 2);
 			return _sb.ToString ();
 		}
@@ -233,43 +231,7 @@ namespace Facc.Grammar.GrammarItems {
 			StringBuilder _sb = new StringBuilder ();
 			Action<string> _append = (s) => _sb.Append (new string ('\t', 2)).Append (s.TrimEnd ()).Append ("\r\n");
 			for (int i = 0; i < ChildItems.Count; ++i) {
-				if (ChildItems[i] is GrammarExprItems _items) {
-					if (_items.IsBList) {
-						_append ($"IEnumerator<int> _try_parse{Suffix}_{i} (int _pos) {{		");
-						_append ($"	Parser.ErrorPos = _pos;										");
-						_append ($"	var _o = new {ClassName}{Suffix}_{i} {{ Parser = Parser }};	");
-						_append ($"	var _enum = _o.TryParse (_pos);								");
-						_append ("	while (_enum.MoveNext ()) {									");
-						_append ($"		int _list_pos = Value_{i}.Count;						");
-						_append ($"		Value_{i}.Add (_o);										");
-						_append ("		yield return _enum.Current;								");
-						_append ($"		var _enum1 = _try_parse{Suffix}_{i} (_enum.Current);	");
-						_append ("		while (_enum1.MoveNext ())								");
-						_append ("			yield return _enum1.Current;						");
-						_append ($"		Value_{i}.RemoveAt (_list_pos);							");
-						_append ("	}															");
-						if (_items.RepeatType.min_0 ()) {
-							_append ("	yield return _pos;										");
-						}
-						_append ("}																");
-					} else {
-						_append ($"IEnumerator<int> _try_parse{Suffix}_{i} (int _pos) {{		");
-						_append ($"	Parser.ErrorPos = _pos;										");
-						_append ($"	var _o = new {ClassName}{Suffix}_{i} {{ Parser = Parser }};	");
-						_append ($"	var _enum = _o.TryParse (_pos);								");
-						_append ("	while (_enum.MoveNext ()) {									");
-						_append ($"		Value{Suffix}_{i} = _o;									");
-						_append ($"		yield return _enum.Current;								");
-						_append ($"		Value{Suffix}_{i} = null;								");
-						_append ("	}															");
-						if (_items.RepeatType.min_0 ()) {
-							_append ("	yield return _pos;										");
-						}
-						_append ("}																");
-					}
-				} else {
-					_sb.Append ("\r\n").Append (ChildItems[i].GenerateTryParse2 ()).Append ("\r\n");
-				}
+				_sb.Append ("\r\n").Append (ChildItems[i].GenerateTryParse2 ()).Append ("\r\n");
 			}
 			while (_sb[^2] == '\r' && _sb[^1] == '\n')
 				_sb.Remove (_sb.Length - 2, 2);
@@ -277,12 +239,47 @@ namespace Facc.Grammar.GrammarItems {
 		}
 
 		public string GenerateTryParse2 () {
-			throw new NotImplementedException ();
+			StringBuilder _sb = new StringBuilder ();
+			Action<string> _append = (s) => _sb.Append (new string ('\t', 2)).Append (s.TrimEnd ()).Append ("\r\n");
+			if (IsBList) {
+				_append ($"IEnumerator<int> _try_parse{Suffix} (int _pos) {{		");
+				_append ($"	Parser.ErrorPos = _pos;									");
+				_append ($"	var _o = new {ClassName}{Suffix} {{ Parser = Parser }};	");
+				_append ($"	var _enum = _o.TryParse (_pos);							");
+				_append ("	while (_enum.MoveNext ()) {								");
+				_append ($"		int _list_pos = Value{Suffix}.Count;				");
+				_append ($"		Value{Suffix}.Add (_o);								");
+				_append ("		yield return _enum.Current;							");
+				_append ($"		var _enum1 = _try_parse{Suffix} (_enum.Current);	");
+				_append ("		while (_enum1.MoveNext ())							");
+				_append ("			yield return _enum1.Current;					");
+				_append ($"		Value{Suffix}.RemoveAt (_list_pos);					");
+				_append ("	}														");
+				if (RepeatType.min_0 ()) {
+					_append ("	yield return _pos;									");
+				}
+				_append ("}															");
+			} else {
+				_append ($"IEnumerator<int> _try_parse{Suffix} (int _pos) {{		");
+				_append ($"	Parser.ErrorPos = _pos;									");
+				_append ($"	var _o = new {ClassName}{Suffix} {{ Parser = Parser }};	");
+				_append ($"	var _enum = _o.TryParse (_pos);							");
+				_append ("	while (_enum.MoveNext ()) {								");
+				_append ($"		Value{Suffix} = _o;									");
+				_append ($"		yield return _enum.Current;							");
+				_append ($"		Value{Suffix} = null;								");
+				_append ("	}														");
+				if (RepeatType.min_0 ()) {
+					_append ("	yield return _pos;									");
+				}
+				_append ("}															");
+			}
+			return _sb.ToString ();
 		}
 
 		public string IsValidExpr () {
 			if (ChildItems.Count == 0) {
-				throw new NotImplementedException ();
+				throw new Exception ("子元素个数必须 >0");
 			} else if (ListType == ExprItemListType.Any) {
 				return $"ValidIndex{Suffix} >= 0";
 			} if (RepeatType.min_0 ()) {
@@ -365,7 +362,7 @@ namespace Facc.Grammar.GrammarItems {
 				}
 				_append ("}");
 			} else {
-				throw new NotImplementedException ();
+				throw new Exception ("列表类型错误");
 			}
 			while (_sb[^2] == '\r' && _sb[^1] == '\n')
 				_sb.Remove (_sb.Length - 2, 2);
