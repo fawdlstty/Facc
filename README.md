@@ -54,6 +54,7 @@ if (_root != null) {
 - [第一章：语言基础](docs/chapter_1.md)
 - [第二章：编程语言语法](docs/chapter_2.md)
 - [第三章：Facc语法规范](docs/chapter_3.md)
+- [第四章：Facc 最佳实践](docs/chapter_4.md)
 
 <!--
 - 第一部分：语法描述
