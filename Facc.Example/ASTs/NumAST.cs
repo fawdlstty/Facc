@@ -24,7 +24,6 @@ namespace Facc.Example.ASTs {
 			Parser.UnReg ("NumAST", _pos);
 		}
 
-
 		IEnumerator<int> _try_parse_0 (int _pos) {
 			Parser.ErrorPos = _pos;
 			Value_0 = "";
@@ -42,12 +41,14 @@ namespace Facc.Example.ASTs {
 		public bool IsValid () => !string.IsNullOrEmpty (Value_0);
 
 		public void PrintTree (int _indent) {
-			Console.WriteLine ($"{new string (' ', _indent * 4)}NumAST");
+			//Console.WriteLine ($"{new string (' ', _indent * 4)}NumAST");
 			Console.WriteLine ($"{new string (' ', (_indent + 1) * 4)}[{Value_0}]");
 		}
 
 		public int Length { get => Value_0.Length; }
 
 		public string Value_0 { get; set; } = "";
+
+		public int Num { get => int.Parse (Value_0); }
 	}
 }

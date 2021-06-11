@@ -40,7 +40,6 @@ namespace Facc.Example.ASTs {
 			Parser.UnReg ("Op2SignAST", _pos);
 		}
 
-
 		IEnumerator<int> _try_parse_0 (int _pos) {
 			Parser.ErrorPos = _pos;
 			if (Parser.TryMatchString (_pos, "+")) {
@@ -49,7 +48,6 @@ namespace Facc.Example.ASTs {
 				Value_0 = "";
 			}
 		}
-
 
 		IEnumerator<int> _try_parse_1 (int _pos) {
 			Parser.ErrorPos = _pos;
@@ -60,7 +58,6 @@ namespace Facc.Example.ASTs {
 			}
 		}
 
-
 		IEnumerator<int> _try_parse_2 (int _pos) {
 			Parser.ErrorPos = _pos;
 			if (Parser.TryMatchString (_pos, "*")) {
@@ -69,7 +66,6 @@ namespace Facc.Example.ASTs {
 				Value_2 = "";
 			}
 		}
-
 
 		IEnumerator<int> _try_parse_3 (int _pos) {
 			Parser.ErrorPos = _pos;
@@ -83,7 +79,7 @@ namespace Facc.Example.ASTs {
 		public bool IsValid () => ValidIndex >= 0;
 
 		public void PrintTree (int _indent) {
-			Console.WriteLine ($"{new string (' ', _indent * 4)}Op2SignAST");
+			//Console.WriteLine ($"{new string (' ', _indent * 4)}Op2SignAST");
 			if (ValidIndex == 0) {
 				Console.WriteLine ($"{new string (' ', (_indent + 1) * 4)}[{Value_0}]");
 			} else if (ValidIndex == 1) {
@@ -102,5 +98,7 @@ namespace Facc.Example.ASTs {
 		public string Value_2 { get; set; } = "";
 		public string Value_3 { get; set; } = "";
 		public int ValidIndex { get; set; } = -1;
+
+		public string Sign { get => ValidIndex switch { 0 => Value_0, 1 => Value_1, 2 => Value_2, 3 => Value_3, _ => throw new Exception ("Invalid ValidIndex") }; }
 	}
 }

@@ -1,5 +1,6 @@
 ﻿using Facc.Grammar.GrammarItems;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -20,7 +21,7 @@ namespace Facc.Grammar {
 
 
 
-		public void Generate () {
+		public void Generate (Dictionary<string, string> _ext_code) {
 			string [] _ebnf_lines = m_grammar.Split (new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 			bool _in_comment = false;
 			foreach (var _ebnf_line0 in _ebnf_lines) {
@@ -92,7 +93,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace {m_namespace} {{
-{_items.ClassCode ()}
+{_items.ClassCode (_ext_code)}
 }}
 ");
 			}

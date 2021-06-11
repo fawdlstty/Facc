@@ -30,7 +30,6 @@ namespace Facc.Example.ASTs {
 			Parser.UnReg ("Op0ExprAST", _pos);
 		}
 
-
 		IEnumerator<int> _try_parse_0 (int _pos) {
 			Parser.ErrorPos = _pos;
 			if (Parser.TryMatchString (_pos, "(")) {
@@ -39,7 +38,6 @@ namespace Facc.Example.ASTs {
 				Value_0 = "";
 			}
 		}
-
 
 		IEnumerator<int> _try_parse_1 (int _pos) {
 			Parser.ErrorPos = _pos;
@@ -51,7 +49,6 @@ namespace Facc.Example.ASTs {
 				Value_1 = null;
 			}
 		}
-
 
 		IEnumerator<int> _try_parse_2 (int _pos) {
 			Parser.ErrorPos = _pos;
@@ -65,7 +62,7 @@ namespace Facc.Example.ASTs {
 		public bool IsValid () => (!string.IsNullOrEmpty (Value_0) && (Value_1 != null && Value_1.IsValid ()) && !string.IsNullOrEmpty (Value_2));
 
 		public void PrintTree (int _indent) {
-			Console.WriteLine ($"{new string (' ', _indent * 4)}Op0ExprAST");
+			//Console.WriteLine ($"{new string (' ', _indent * 4)}Op0ExprAST");
 			Console.WriteLine ($"{new string (' ', (_indent + 1) * 4)}[{Value_0}]");
 			if (Value_1 != null && Value_1.IsValid ()) {
 				Value_1.PrintTree (_indent + 1);
@@ -78,5 +75,7 @@ namespace Facc.Example.ASTs {
 		public string Value_0 { get; set; } = "";
 		public ExprAST Value_1 { get; set; } = null;
 		public string Value_2 { get; set; } = "";
+
+		public void Process () => Value_1.Process ();
 	}
 }

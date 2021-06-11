@@ -35,7 +35,6 @@ namespace Facc.Example.ASTs {
 			Parser.UnReg ("ExprAST", _pos);
 		}
 
-
 		IEnumerator<int> _try_parse_0 (int _pos) {
 			Parser.ErrorPos = _pos;
 			var _o = new NumAST { Parser = Parser };
@@ -47,7 +46,6 @@ namespace Facc.Example.ASTs {
 			}
 		}
 
-
 		IEnumerator<int> _try_parse_1 (int _pos) {
 			Parser.ErrorPos = _pos;
 			var _o = new Op0ExprAST { Parser = Parser };
@@ -58,7 +56,6 @@ namespace Facc.Example.ASTs {
 				Value_1 = null;
 			}
 		}
-
 
 		IEnumerator<int> _try_parse_2 (int _pos) {
 			Parser.ErrorPos = _pos;
@@ -74,7 +71,7 @@ namespace Facc.Example.ASTs {
 		public bool IsValid () => ValidIndex >= 0;
 
 		public void PrintTree (int _indent) {
-			Console.WriteLine ($"{new string (' ', _indent * 4)}ExprAST");
+			//Console.WriteLine ($"{new string (' ', _indent * 4)}ExprAST");
 			if (ValidIndex == 0) {
 				if (Value_0 != null && Value_0.IsValid ()) {
 					Value_0.PrintTree (_indent + 1);
@@ -96,5 +93,14 @@ namespace Facc.Example.ASTs {
 		public Op0ExprAST Value_1 { get; set; } = null;
 		public Op2ExprAST Value_2 { get; set; } = null;
 		public int ValidIndex { get; set; } = -1;
+
+		public void Process () {
+			while (ValidIndex == 1) {
+				(Value_0, Value_1, Value_2, ValidIndex) = (Value_1.Value_1.Value_0, Value_1.Value_1.Value_1, Value_1.Value_1.Value_2, Value_1.Value_1.ValidIndex);
+			}
+			if (ValidIndex == 2) {
+				Value_2.Process ();
+			}
+		}
 	}
 }

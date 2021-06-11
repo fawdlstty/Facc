@@ -27,7 +27,6 @@ namespace Facc.Example.ASTs {
 			Parser.UnReg ("Op2ExprAST", _pos);
 		}
 
-
 		IEnumerator<int> _try_parse_0 (int _pos) {
 			Parser.ErrorPos = _pos;
 			var _o = new ExprAST { Parser = Parser };
@@ -43,8 +42,8 @@ namespace Facc.Example.ASTs {
 			Parser.ErrorPos = _pos;
 			var _o = new Op2ExprAST_1 { Parser = Parser };
 			var _enum = _o.TryParse (_pos);
-			int _list_pos = Value_1.Count;
 			while (_enum.MoveNext ()) {
+				int _list_pos = Value_1.Count;
 				Value_1.Add (_o);
 				yield return _enum.Current;
 				var _enum1 = _try_parse_1 (_enum.Current);
@@ -57,7 +56,7 @@ namespace Facc.Example.ASTs {
 		public bool IsValid () => ((Value_0 != null && Value_0.IsValid ()) && Value_1.Count > 0);
 
 		public void PrintTree (int _indent) {
-			Console.WriteLine ($"{new string (' ', _indent * 4)}Op2ExprAST");
+			//Console.WriteLine ($"{new string (' ', _indent * 4)}Op2ExprAST");
 			if (Value_0 != null && Value_0.IsValid ()) {
 				Value_0.PrintTree (_indent + 1);
 			}
@@ -69,6 +68,48 @@ namespace Facc.Example.ASTs {
 
 		public ExprAST Value_0 { get; set; } = null;
 		public List<Op2ExprAST_1> Value_1 { get; set; } = new List<Op2ExprAST_1> ();
+
+		private static Dictionary<string, int> s_level = new Dictionary<string, int> {
+			["+"] = 10,
+			["-"] = 10,
+			["*"] = 20,
+			["/"] = 20,
+		};
+
+		public void Process () {
+			while (Value_1.Count > 1) {
+				int _pos = 0;
+				string _sign = Value_1 [0].Value_1_0.Sign;
+				for (int i = 1; i < Value_1.Count; ++i) {
+					if (s_level[Value_1[i].Value_1_0.Sign] > s_level[_sign]) {
+						_sign = Value_1[i].Value_1_0.Sign;
+						_pos = i;
+					}
+				}
+				if (_pos == 0) {
+					Value_0 = new ExprAST {
+						ValidIndex = 2, Value_2 = new Op2ExprAST {
+							Value_0 = Value_0,
+							Value_1 = new List<Op2ExprAST_1> { Value_1[0], },
+						}
+					};
+					Value_1.RemoveAt (0);
+				} else {
+					Value_1[_pos - 1] = new Op2ExprAST_1 {
+						Value_1_0 = Value_1[_pos - 1].Value_1_0,
+						Value_1_1 = new ExprAST {
+							ValidIndex = 2, Value_2 = new Op2ExprAST {
+								Value_0 = Value_1[_pos - 1].Value_1_1,
+								Value_1 = new List<Op2ExprAST_1> { Value_1[_pos], },
+							}
+						},
+					};
+					Value_1.RemoveAt (_pos);
+				}
+			}
+			Value_0.Process ();
+			Value_1[0].Value_1_1.Process ();
+		}
 	}
 
 	public class Op2ExprAST_1: IAST {
@@ -90,7 +131,6 @@ namespace Facc.Example.ASTs {
 			Parser.UnReg ("Op2ExprAST_1", _pos);
 		}
 
-
 		IEnumerator<int> _try_parse_1_0 (int _pos) {
 			Parser.ErrorPos = _pos;
 			var _o = new Op2SignAST { Parser = Parser };
@@ -101,7 +141,6 @@ namespace Facc.Example.ASTs {
 				Value_1_0 = null;
 			}
 		}
-
 
 		IEnumerator<int> _try_parse_1_1 (int _pos) {
 			Parser.ErrorPos = _pos;
@@ -117,7 +156,7 @@ namespace Facc.Example.ASTs {
 		public bool IsValid () => ((Value_1_0 != null && Value_1_0.IsValid ()) && (Value_1_1 != null && Value_1_1.IsValid ()));
 
 		public void PrintTree (int _indent) {
-			Console.WriteLine ($"{new string (' ', _indent * 4)}Op2ExprAST_1");
+			//Console.WriteLine ($"{new string (' ', _indent * 4)}Op2ExprAST_1");
 			if (Value_1_0 != null && Value_1_0.IsValid ()) {
 				Value_1_0.PrintTree (_indent + 1);
 			}

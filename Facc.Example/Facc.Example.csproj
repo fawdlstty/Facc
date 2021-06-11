@@ -9,4 +9,8 @@
     <ProjectReference Include="..\Facc\Facc.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="ASTs\" />
+  </ItemGroup>
+
 </Project>

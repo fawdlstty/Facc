@@ -151,8 +151,14 @@ namespace Facc.Grammar.GrammarItems {
 			return _items;
 		}
 
-		public string ClassCode () {
+		public string ClassCode (Dictionary<string, string> _ext_code) {
 			StringBuilder _sb = new StringBuilder ();
+			string _ext_key = $"{ClassName}{Suffix}";
+			string _ext_code_str = (_ext_code?.ContainsKey (_ext_key) ?? false) ? _ext_code [_ext_key].Trim () : "";
+			if (_ext_code_str != "") {
+				_ext_code_str = string.Join (@"
+", from p in _ext_code_str.Split ('\n', StringSplitOptions.RemoveEmptyEntries) let q = p.TrimEnd () select $"{(q == "" ? "" : "\t\t")}{q}");
+			}
 			_sb.Append ($@"	public class {ClassName}{Suffix}: IAST {{
 		// {EbnfId} ::= {Expr}
 
@@ -170,17 +176,17 @@ namespace Facc.Grammar.GrammarItems {
 		public bool IsValid () => {IsValidExpr ()};
 
 		public void PrintTree (int _indent) {{
-			Console.WriteLine ($""{{new string (' ', _indent * 4)}}{ClassName}{Suffix}"");
+			//Console.WriteLine ($""{{new string (' ', _indent * 4)}}{ClassName}{Suffix}"");
 {PrintTree ()}
 		}}
 
 		public int Length {{ get => {LengthExpr ()}; }}
 
-{MValue ()}
+{MValue ()}{(_ext_code_str != "" ? $"\r\n\r\n{_ext_code_str}" : "")}
 	}}");
 			for (int i = 0; i < ChildItems.Count; ++i) {
 				if (ChildItems [i] is GrammarExprItems _items) {
-					_sb.Append ("\r\n\r\n").Append (_items.ClassCode ());
+					_sb.Append ("\r\n\r\n").Append (_items.ClassCode (_ext_code));
 				}
 			}
 			return _sb.ToString ();
@@ -231,7 +237,7 @@ namespace Facc.Grammar.GrammarItems {
 			StringBuilder _sb = new StringBuilder ();
 			Action<string> _append = (s) => _sb.Append (new string ('\t', 2)).Append (s.TrimEnd ()).Append ("\r\n");
 			for (int i = 0; i < ChildItems.Count; ++i) {
-				_sb.Append ("\r\n").Append (ChildItems[i].GenerateTryParse2 ()).Append ("\r\n");
+				_sb.Append (ChildItems[i].GenerateTryParse2 ()).Append ("\r\n");
 			}
 			while (_sb[^2] == '\r' && _sb[^1] == '\n')
 				_sb.Remove (_sb.Length - 2, 2);

@@ -29,7 +29,7 @@ string _path = "D:\\ASTs"; // AST解析文件生成路径
 string _namespace = "Facc.Example.ASTs"; // 生成的AST解析文件的命名空间
 var _generator = new AstGenerator (_grammar, _path, _namespace);
 _generator.ClearPath (); // 清空指定路径下的所有文件
-_generator.Generate (); // 生成AST解析文件
+_generator.Generate (null); // 生成AST解析文件
 ```
 
 执行生成的AST代码，解析文法：
