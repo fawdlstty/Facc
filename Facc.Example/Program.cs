@@ -91,7 +91,7 @@ expr				::= num | op0_expr | op2_expr
 
 		static void parse () {
 			var _ast_parser = new AstParser ();
-			var _root = _ast_parser.Parse<ASTs.ExprAST> ("(((3+2)))*(5-4)");
+			var _root = _ast_parser.Parse<ASTs.ExprAST> ("3+2*5-4");
 			if (_root != null) {
 				Console.WriteLine ();
 				_root.Process ();

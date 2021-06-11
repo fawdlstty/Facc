@@ -4,7 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Version>0.0.5</Version>
+    <Version>0.0.6</Version>
     <Authors>fawdlstty</Authors>
     <Description>FA Compiler Compiler for .NET5</Description>
     <Copyright>Copyright (C) 2021</Copyright>
