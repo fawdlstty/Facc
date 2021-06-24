@@ -50,6 +50,14 @@ namespace Facc.Parser {
 			return m_code[_pos];
 		}
 
+		public int MatchReverseString (int _pos, string _s) {
+			int _p = m_code.IndexOf (_s, _pos);
+			return (_p == -1 ? m_code.Length : _p) -_pos;
+		}
+		public string GetPartCode (int _pos, int _len) {
+			return m_code.Substring (_pos, _len);
+		}
+
 		public bool TryMatchString (int _pos, string _s) {
 			if (m_code.Length < _pos + _s.Length)
 				return false;

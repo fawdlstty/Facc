@@ -11,7 +11,7 @@
 
 static void generate () {
 	std::string _grammar = R"( id ::= [a-zA-Z\x80-\xff_][0-9a-zA-Z\x80-\xff_]* )";
-	std::string _path = "E:\\GitHub\\_\\fa_experimental\\Facc\\Facc.cpp\\ASTs";
+	std::string _path = "E:\\GitHub\\_\\fa\\Facc\\Facc.cpp\\ASTs";
 	AstGenerator _generator { _grammar, _path };
 	_generator.ClearPath ();
 	_generator.Generate ();

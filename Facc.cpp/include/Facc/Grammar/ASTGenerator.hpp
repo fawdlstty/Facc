@@ -11,8 +11,8 @@
 #include <string_view>
 #include <vector>
 
-#define NOMINMAX
-#include <Windows.h>
+//#define NOMINMAX
+//#include <Windows.h>
 
 #include <fmt/core.h>
 
@@ -30,17 +30,22 @@ public:
 	AstGenerator (std::string _grammar, std::string _path): m_grammar (_grammar), m_path (_path) {}
 
 	void ClearPath () {
-		//std::filesystem::remove_all (m_path);
-		//std::filesystem::create_directory (m_path);
-		std::string _path_find = fmt::format ("{}\\*AST.hpp", m_path);
-		WIN32_FIND_DATAA _wfd;
-		HANDLE _find = ::FindFirstFileA (_path_find.data (), &_wfd);
-		if (_find != INVALID_HANDLE_VALUE) {
-			do {
-				_path_find = fmt::format ("{}\\{}", m_path, _wfd.cFileName);
-				::DeleteFileA (_path_find.data ());
-			} while (::FindNextFileA (_find, &_wfd));
+		if (std::filesystem::exists (m_path)) {
+			std::filesystem::directory_iterator _iter { m_path };
+			for (auto _item : _iter)
+				std::filesystem::remove (_item);
+		} else {
+			std::filesystem::create_directory (m_path);
 		}
+		//std::string _path_find = fmt::format ("{}\\*AST.hpp", m_path);
+		//WIN32_FIND_DATAA _wfd;
+		//HANDLE _find = ::FindFirstFileA (_path_find.data (), &_wfd);
+		//if (_find != INVALID_HANDLE_VALUE) {
+		//	do {
+		//		_path_find = fmt::format ("{}\\{}", m_path, _wfd.cFileName);
+		//		::DeleteFileA (_path_find.data ());
+		//	} while (::FindNextFileA (_find, &_wfd));
+		//}
 	}
 
 	void Generate () {
@@ -133,6 +138,7 @@ public:
 			std::string _class_name = Common::get_classname (_id);
 			std::string _expr_tmp = std::string (_expr);
 			auto _items = GrammarExprItems::ParseItems (std::string (_id), _class_name, _expr_tmp);
+			_items->ProcessConstruct ();
 			std::vector<std::string> _non_terminals;
 			_items->GetNonterminals (_non_terminals);
 			std::string _path = m_path;

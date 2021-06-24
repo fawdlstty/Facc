@@ -9,13 +9,14 @@ namespace Facc.Grammar.GrammarItems {
 		public EbnfExprItemRepeatType RepeatType { get; set; } = EbnfExprItemRepeatType.Unknown;
 		public string Suffix { get; set; } = "";
 		public string Content { init; get; } = "";
+		public bool Reverse { get; set; } = false;
 
 		public string GetClearStrings () => $"Value{Suffix} = \"\";";
 
 		public string GenerateTryParse2 () {
 			StringBuilder _sb = new StringBuilder ();
 			Action<string> _append = (s) => _sb.Append (new string ('\t', 2)).Append (s.TrimEnd ()).Append ("\r\n");
-			if (RepeatType.max_1 ()) {
+			if (RepeatType.max_1 () && (!Reverse)) {
 				_append ($"IEnumerator<int> _try_parse{Suffix} (int _pos) {{						");
 				_append ($"	Parser.ErrorPos = _pos;													");
 				_append ($"	char? _ch;																");
@@ -84,7 +85,10 @@ namespace Facc.Grammar.GrammarItems {
 				}
 			}
 			string _ret = string.Join (" || ", from p in _items select p.Gen ());
-			return (_items.Count == 1 && _ret[0] == '(') ? _ret[1..^1] : _ret;
+			_ret = (_items.Count == 1 && _ret[0] == '(') ? _ret[1..^1] : _ret;
+			if (Reverse)
+				_ret = $"!({_ret})";
+			return _ret;
 		}
 	}
 

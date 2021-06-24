@@ -83,26 +83,58 @@ op2_expr			::= expr (op2_sign expr)+
 expr				::= num | op0_expr | op2_expr
 ";
 			string _path = System.Diagnostics.Process.GetCurrentProcess ().MainModule.FileName;
-			_path = $"{_path [..(_path.IndexOf ("Facc.Example\\") + 13)]}ASTs";
+			_path = $"{_path[..(_path.IndexOf ("Facc.Example\\") + 13)]}ASTs";
 			var _generator = new AstGenerator (_grammar, _path, "Facc.Example.ASTs");
 			_generator.ClearPath ();
 			_generator.Generate (s_ext_code);
+			//			var _grammar = @"
+			//id					::= [a-zA-Z\x80-\xff_][0-9a-zA-Z\x80-\xff_]*
+			//ids					::= id ('.' id)*
+			//s					::= ([ \r\n] | ('\x30\x30' ^'\n' '\n') | ('\x30*' ^'*\x30' '*\x30'))*
+			//public_opt			::= ('public' | 'internal' | 'protected' | 'private')?
+
+			//type				::= ids
+
+			//use_expr			::= s 'use' s ids s ';'
+			//class_func_expr		::= s public_opt s type s id s '(' s ')' s '{' s '}'
+			//class_var_expr		::= s public_opt s type s id s ';'
+			//class_expr			::= s public_opt s id (s ':' s ids s (',' s ids)*)? s '{' (class_func_expr | class_var_expr)* s '}'
+			//program				::= use_expr* class_expr* s
+			//";
+			//			string _path = System.Diagnostics.Process.GetCurrentProcess ().MainModule.FileName;
+			//			_path = $"{_path[..(_path.IndexOf ("Facc.Example\\") + 13)]}ASTs";
+			//			var _generator = new AstGenerator (_grammar, _path, "Facc.Example.ASTs");
+			//			_generator.ClearPath ();
+			//			_generator.Generate (s_ext_code);
 		}
 
 		static void parse () {
-			var _ast_parser = new AstParser ();
-			var _root = _ast_parser.Parse<ASTs.ExprAST> ("3+2*5-4");
-			if (_root != null) {
-				Console.WriteLine ();
-				_root.Process ();
-				_root.PrintTree (0);
-			} else {
-				var _err =_ast_parser.Error;
-				Console.WriteLine ();
-				Console.WriteLine ($"Error in Line {_err.Line}: {_err.ErrorInfo}");
-				Console.WriteLine (_err.LineCode);
-				Console.WriteLine ($"{new string (' ', _err.LinePos)}^");
-			}
+			//var _ast_parser = new AstParser ();
+			//var _root = _ast_parser.Parse<ASTs.ExprAST> ("3+2*5-4");
+			//if (_root != null) {
+			//	Console.WriteLine ();
+			//	_root.Process ();
+			//	_root.PrintTree (0);
+			//} else {
+			//	var _err =_ast_parser.Error;
+			//	Console.WriteLine ();
+			//	Console.WriteLine ($"Error in Line {_err.Line}: {_err.ErrorInfo}");
+			//	Console.WriteLine (_err.LineCode);
+			//	Console.WriteLine ($"{new string (' ', _err.LinePos)}^");
+			//}
+			//var _ast_parser = new AstParser ();
+			//var _root = _ast_parser.Parse<ASTs.UseExprAST> ("use fa;");
+			//if (_root != null) {
+			//	Console.WriteLine ();
+			//	//_root.Process ();
+			//	_root.PrintTree (0);
+			//} else {
+			//	var _err =_ast_parser.Error;
+			//	Console.WriteLine ();
+			//	Console.WriteLine ($"Error in Line {_err.Line}: {_err.ErrorInfo}");
+			//	Console.WriteLine (_err.LineCode);
+			//	Console.WriteLine ($"{new string (' ', _err.LinePos)}^");
+			//}
 		}
 
 		static void Main (string [] args) {

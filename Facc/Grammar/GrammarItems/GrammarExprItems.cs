@@ -23,9 +23,6 @@ namespace Facc.Grammar.GrammarItems {
 		public ExprItemListType ListType { get; set; } = ExprItemListType.Unknown;
 		public bool InitRecognize { get; set; } = true;
 
-		// 当前对象为无限匹配列表类型，代表匹配值为List<>类型
-		public bool IsBList { get => RepeatType.max_N (); }
-
 		public static GrammarExprItems ParseItems (string _ebnf_id, string _class_name, ref string _expr) {
 			var _items = new GrammarExprItems { EbnfId = _ebnf_id, ClassName = _class_name, Expr = _expr };
 			bool _is_in_quot = false;
@@ -94,6 +91,27 @@ namespace Facc.Grammar.GrammarItems {
 						_expr = _expr[1..].Trim ();
 					_terminal.Suffix = $"{_items.Suffix}_{_items.ChildItems.Count}";
 					_items.ChildItems.Add (_terminal);
+				} else if (_expr[0] == '^') {
+					if (_expr.Length == 1)
+						throw new Exception ("表达式不规范");
+					_expr = _expr[1..];
+					if (_expr[0] == '[') {
+						int _p = _expr.IndexOf (']');
+						var _terminal = new TerminalCharItem { RepeatType = EbnfExprItemRepeatType._1, Content = _expr[1.._p] };
+						_expr = _expr[(_p + 1)..].Trim ();
+						_terminal.Suffix = $"{_items.Suffix}_{_items.ChildItems.Count}";
+						_terminal.Reverse = true;
+						_items.ChildItems.Add (_terminal);
+					} else if (_expr[0] == '\'' || _expr[0] == '"') {
+						int _p = _expr.IndexOf (_expr[0], 1);
+						var _terminal = new TerminalStringItem { RepeatType = EbnfExprItemRepeatType._1, Content = _expr[1.._p] };
+						_expr = _expr[(_p + 1)..].Trim ();
+						_terminal.Suffix = $"{_items.Suffix}_{_items.ChildItems.Count}";
+						_terminal.Reverse = true;
+						_items.ChildItems.Add (_terminal);
+					} else {
+						throw new Exception ("表达式不规范");
+					}
 				} else if (_expr[0] == '(') {
 					// range
 					var _nonterminal_items = ParseItems ($"[part of] {_ebnf_id}", _items.ClassName, ref _expr);
@@ -151,6 +169,43 @@ namespace Facc.Grammar.GrammarItems {
 			return _items;
 		}
 
+		public void ProcessConstruct (bool _init = true) {
+			// 递归处理，放前面的原因是，先处理好子节点，再处理当前节点
+			foreach (var _child in ChildItems) {
+				if (_child is GrammarExprItems _child_item)
+					_child_item.ProcessConstruct (false);
+			}
+
+			// 调整当前节点结构
+			if (RepeatType.is_1 ()) {
+				//// 当前元素重复类型为1
+				//// 如果子元素只有一个，并且重复类型不为1，那么与当前元素交换重复类型
+				//if (ChildItems.Count == 1 && (!ChildItems[0].RepeatType.is_1 ())) {
+				//	(RepeatType, ChildItems[0].RepeatType) = (ChildItems[0].RepeatType, RepeatType);
+				//}
+			} else if (RepeatType.max_N ()) {
+				// 当前元素重复类型为0N或1N
+				// 如果子元素不止一个，那么加入中间元素
+				if (ChildItems.Count > 1) {
+					var _items = new GrammarExprItems {
+						EbnfId = $"{(EbnfId.StartsWith ("[part of] ") ? "" : "[part of] ")}{EbnfId}",
+						ClassName = $"{ClassName}",
+						Expr = Expr[..^1],
+						ListType = ListType,
+						InitRecognize = false,
+						RepeatType = EbnfExprItemRepeatType._1
+					};
+					_items.ChildItems.AddRange (ChildItems);
+					ListType = ExprItemListType.All;
+					ChildItems.Clear ();
+					ChildItems.Add (_items);
+				}
+			}
+
+			if (_init)
+				Suffix = m_suffix; // 重置子元素后缀
+		}
+
 		public string ClassCode (Dictionary<string, string> _ext_code) {
 			StringBuilder _sb = new StringBuilder ();
 			string _ext_key = $"{ClassName}{Suffix}";
@@ -193,7 +248,7 @@ namespace Facc.Grammar.GrammarItems {
 		}
 
 		public string GetClearStrings () {
-			if (IsBList) {
+			if (RepeatType.max_N ()) {
 				return $"Value{Suffix}.Clear ();";
 			} else {
 				return $"Value{Suffix} = null;";
@@ -236,8 +291,29 @@ namespace Facc.Grammar.GrammarItems {
 		public string GenerateTryParse2Wrap () {
 			StringBuilder _sb = new StringBuilder ();
 			Action<string> _append = (s) => _sb.Append (new string ('\t', 2)).Append (s.TrimEnd ()).Append ("\r\n");
-			for (int i = 0; i < ChildItems.Count; ++i) {
-				_sb.Append (ChildItems[i].GenerateTryParse2 ()).Append ("\r\n");
+			if (RepeatType.max_N ()) {
+				if (ChildItems.Count != 1)
+					throw new MethodAccessException ("需调用 ProcessConstruct 更新列结构");
+				_append ($"IEnumerator<int> _try_parse{Suffix}_0 (int _pos) {{			");
+				_append ($"	Parser.ErrorPos = _pos;										");
+				_append ($"	var _o = new {ClassName}{Suffix}_0 {{ Parser = Parser }};	");
+				_append ($"	var _enum = _o.TryParse (_pos);								");
+				_append ("	while (_enum.MoveNext ()) {									");
+				_append ($"		Value{Suffix}_0.Add (_o);								");
+				_append ($"		yield return _enum.Current;								");
+				_append ($"		var _enum1 = _try_parse{Suffix}_0 (_enum.Current);		");
+				_append ($"		while (_enum1.MoveNext ())								");
+				_append ($"			yield return _enum1.Current;						");
+				_append ($"		Value{Suffix}_0.RemoveAt (Value{Suffix}_0.Count - 1);	");
+				_append ("	}															");
+				if (RepeatType.min_0 ()) {
+					_append ("	yield return _pos;										");
+				}
+				_append ("}																");
+			} else {
+				for (int i = 0; i < ChildItems.Count; ++i) {
+					_sb.Append (ChildItems[i].GenerateTryParse2 ()).Append ("\r\n");
+				}
 			}
 			while (_sb[^2] == '\r' && _sb[^1] == '\n')
 				_sb.Remove (_sb.Length - 2, 2);
@@ -247,7 +323,7 @@ namespace Facc.Grammar.GrammarItems {
 		public string GenerateTryParse2 () {
 			StringBuilder _sb = new StringBuilder ();
 			Action<string> _append = (s) => _sb.Append (new string ('\t', 2)).Append (s.TrimEnd ()).Append ("\r\n");
-			if (IsBList) {
+			if (RepeatType.max_N ()) {
 				_append ($"IEnumerator<int> _try_parse{Suffix} (int _pos) {{		");
 				_append ($"	Parser.ErrorPos = _pos;									");
 				_append ($"	var _o = new {ClassName}{Suffix} {{ Parser = Parser }};	");
@@ -291,10 +367,18 @@ namespace Facc.Grammar.GrammarItems {
 			} if (RepeatType.min_0 ()) {
 				return "true";
 			} else if (ChildItems.Count == 1) {
-				if (ChildItems [0] is TerminalCharItem || ChildItems [0] is TerminalStringItem) {
-					return $"!string.IsNullOrEmpty (Value{Suffix}_{0})";
+				if (RepeatType.max_N ()) {
+					if (ChildItems[0].RepeatType.min_0 ()) {
+						return "true";
+					} else {
+						return $"Value{Suffix}_{0}.Count > 0";
+					}
 				} else {
-					return $"Value{Suffix}_{0}.IsValid ()";
+					if (ChildItems[0] is TerminalCharItem || ChildItems[0] is TerminalStringItem) {
+						return $"!string.IsNullOrEmpty (Value{Suffix}_{0})";
+					} else {
+						return $"Value{Suffix}_{0}.IsValid ()";
+					}
 				}
 			} else {
 				StringBuilder _sb = new StringBuilder ();
@@ -302,7 +386,7 @@ namespace Facc.Grammar.GrammarItems {
 				for (int i = 0; i < ChildItems.Count; ++i) {
 					_sb.Append (i > 0 ? " && " : "");
 					if (ChildItems [i] is GrammarExprItems _items) {
-						if (_items.IsBList) {
+						if (_items.RepeatType.max_N ()) {
 							if (_items.RepeatType.is_1N ()) {
 								_sb.Append ($"Value{Suffix}_{i}.Count > 0");
 							} else {
@@ -331,14 +415,19 @@ namespace Facc.Grammar.GrammarItems {
 		public string PrintTree () {
 			StringBuilder _sb = new StringBuilder ();
 			Action<string> _append = (s) => _sb.Append (new string ('\t', 3)).Append (s.TrimEnd ()).Append ("\r\n");
-			if (ListType == ExprItemListType.All) {
+			if (RepeatType.max_N ()) {
+				if (ChildItems.Count != 1)
+					throw new MethodAccessException ("需调用 ProcessConstruct 更新列结构");
+				_append ($"for (int i = 0; i < Value{Suffix}_{0}.Count; ++i)						");
+				_append ($"	Value{Suffix}_{0} [i].PrintTree (_indent + 1);							");
+			} else if (ListType == ExprItemListType.All) {
 				for (int i = 0; i < ChildItems.Count; ++i) {
 					if (ChildItems[i] is NonTerminalItem _item) {
 						_append ($"if (Value{Suffix}_{i} != null{(_item.RepeatType.min_1 () ? $" && Value{Suffix}_{i}.IsValid ()" : "")}) {{");
 						_append ($"	{ChildItems[i].PrintTree ()}");
 						_append ("}																	");
 					} else if (ChildItems[i] is GrammarExprItems _items) {
-						if (_items.IsBList) {
+						if (_items.RepeatType.max_N ()) {
 							_append ($"for (int i = 0; i < Value{Suffix}_{i}.Count; ++i)			");
 							_append ($"	Value{Suffix}_{i} [i].PrintTree (_indent + 1);				");
 						} else {
@@ -356,7 +445,7 @@ namespace Facc.Grammar.GrammarItems {
 						_append ($"		{ChildItems[i].PrintTree ()}");
 						_append ("	}																");
 					} else if (ChildItems[i] is GrammarExprItems _items) {
-						if (_items.IsBList) {
+						if (_items.RepeatType.max_N ()) {
 							_append ($"	for (int i = 0; i < Value{Suffix}_{i}.Count; ++i)			");
 							_append ($"		Value{Suffix}_{i} [i].PrintTree (_indent + 1);			");
 						} else {
@@ -379,19 +468,25 @@ namespace Facc.Grammar.GrammarItems {
 			StringBuilder _sb = new StringBuilder ();
 			Action<string> _append = (s) => _sb.Append (new string ('\t', 2)).Append (s.TrimEnd ()).Append ("\r\n");
 
-			for (int i = 0; i < ChildItems.Count; ++i) {
-				if (ChildItems[i] is GrammarExprItems _items) {
-					if (_items.IsBList) {
-						_append ($"public List<{ClassName}{Suffix}_{i}> Value{Suffix}_{i} {{ get; set; }} = new List<{ClassName}{Suffix}_{i}> ();	");
+			if (RepeatType.max_N ()) {
+				if (ChildItems.Count != 1)
+					throw new MethodAccessException ("需调用 ProcessConstruct 更新列结构");
+				_append ($"public List<{ClassName}{Suffix}_{0}> Value{Suffix}_{0} {{ get; set; }} = new List<{ClassName}{Suffix}_{0}> ();	");
+			} else {
+				for (int i = 0; i < ChildItems.Count; ++i) {
+					if (ChildItems[i] is GrammarExprItems _items) {
+						if (_items.RepeatType.max_N ()) {
+							_append ($"public List<{ClassName}{Suffix}_{i}> Value{Suffix}_{i} {{ get; set; }} = new List<{ClassName}{Suffix}_{i}> ();	");
+						} else {
+							_append ($"public {ClassName}{Suffix}_{i} Value{Suffix}_{i} {{ get; set; }} = null;		");
+						}
 					} else {
-						_append ($"public {ClassName}{Suffix}_{i} Value{Suffix}_{i} {{ get; set; }} = null;											");
+						_append (ChildItems[i].MValue ());
 					}
-				} else {
-					_append (ChildItems[i].MValue ());
 				}
-			}
-			if (ListType == ExprItemListType.Any) {
-				_append ($"public int ValidIndex{Suffix} {{ get; set; }} = -1;																		");
+				if (ListType == ExprItemListType.Any) {
+					_append ($"public int ValidIndex{Suffix} {{ get; set; }} = -1;									");
+				}
 			}
 			while (_sb[^2] == '\r' && _sb[^1] == '\n')
 				_sb.Remove (_sb.Length - 2, 2);
@@ -400,18 +495,24 @@ namespace Facc.Grammar.GrammarItems {
 
 		public string LengthExpr () {
 			StringBuilder _sb = new StringBuilder ();
-			for (int i = 0; i < ChildItems.Count; ++i) {
-				_sb.Append (i > 0 ? " + " : "");
-				if (ChildItems[i] is GrammarExprItems _items) {
-					if (_items.IsBList) {
-						_sb.Append ($"(from p in Value{Suffix}_{i} select p.Length).Sum ()");
+			if (RepeatType.max_N ()) {
+				if (ChildItems.Count != 1)
+					throw new MethodAccessException ("需调用 ProcessConstruct 更新列结构");
+				_sb.Append ($"(from p in Value{Suffix}_{0} select p.Length).Sum ()");
+			} else {
+				for (int i = 0; i < ChildItems.Count; ++i) {
+					_sb.Append (i > 0 ? " + " : "");
+					if (ChildItems[i] is GrammarExprItems _items) {
+						if (_items.RepeatType.max_N ()) {
+							_sb.Append ($"(from p in Value{Suffix}_{i} select p.Length).Sum ()");
+						} else {
+							_sb.Append ($"Value{Suffix}_{i}.Length");
+						}
 					} else {
-						_sb.Append ($"Value{Suffix}_{i}.Length");
+						_sb.Append (ChildItems[i].LengthExpr ());
 					}
-				} else {
-					_sb.Append (ChildItems[i].LengthExpr ());
+
 				}
-				
 			}
 			return _sb.ToString ();
 		}
