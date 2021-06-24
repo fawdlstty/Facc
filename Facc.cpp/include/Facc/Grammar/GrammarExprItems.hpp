@@ -101,6 +101,27 @@ public:
 					_expr = Common::trim (_expr.substr (1));
 				_terminal->SetSuffix (fmt::format ("{}_{}", _items->Suffix, _items->ChildItems.size ()));
 				_items->ChildItems.push_back (_terminal);
+			} else if (_expr [0] == '^') {
+				if (_expr.size () == 1)
+					throw Exception ("表达式不规范");
+				_expr = _expr.substr (1);
+				if (_expr [0] == '[') {
+					size_t _p = _expr.find (']');
+					auto _terminal = std::make_shared<TerminalCharItem> (_expr.substr (1, _p - 1));
+					_expr = Common::trim (_expr.substr (_p + 1));
+					_terminal->SetSuffix (fmt::format ("{}_{}", _items->Suffix, _items->ChildItems.size ()));
+					_terminal->Reverse = true;
+					_items->ChildItems.push_back (_terminal);
+				} else if (_expr [0] == '\'' || _expr [0] == '"') {
+					size_t _p = _expr.find (_expr [0], 1);
+					auto _terminal = std::make_shared<TerminalStringItem> (_expr.substr (1, _p - 1));
+					_expr = Common::trim (_expr.substr (_p + 1));
+					_terminal->SetSuffix (fmt::format ("{}_{}", _items->Suffix, _items->ChildItems.size ()));
+					_terminal->Reverse = true;
+					_items->ChildItems.push_back (_terminal);
+				} else {
+					throw Exception ("表达式不规范");
+				}
 			} else if (_expr [0] == '(') {
 				// range
 				auto _nonterminal_items = ParseItems (fmt::format ("[part of] {}", _ebnf_id), _items->ClassName, _expr);
@@ -372,10 +393,10 @@ public:
 		} if (RType::min_0 (RepeatType)) {
 			return "true";
 		} else if (ChildItems.size () == 1) {
-			if (dynamic_cast<TerminalCharItem*> (ChildItems [0].get ()) || dynamic_cast<TerminalStringItem *> (ChildItems [0].get ())) {
-				return fmt::format ("Value{}_0.size () > 0", Suffix);
-			} else {
+			if (dynamic_cast<TerminalCharItem *> (ChildItems [0].get ()) || dynamic_cast<TerminalStringItem *> (ChildItems [0].get ()) || dynamic_cast<NonTerminalItem *> (ChildItems [0].get ())) {
 				return fmt::format ("Value{}_0->IsValid ()", Suffix);
+			} else {
+				return fmt::format ("Value{}_0.size () > 0", Suffix);
 			}
 		} else {
 			std::stringstream _sb;

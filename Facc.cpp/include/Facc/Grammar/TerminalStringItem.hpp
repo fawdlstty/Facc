@@ -18,6 +18,7 @@ public:
 	TerminalStringItem (std::string _content): Content (_content) {}
 
 	std::string Content;
+	bool Reverse = false;
 
 	std::string GetClearStrings () override {
 		return fmt::format ("Value{} = \"\";", Suffix);
@@ -28,17 +29,24 @@ public:
 		auto _append0 = [&_sb] (std::string _s) { _sb << Common::trim_end (_s) << "\r\n"; };
 		auto _append1 = [&_append0] (std::string _s, std::string _a0) { _append0 (fmt::format (_s, _a0)); };
 		auto _append2 = [&_append0] (std::string _s, std::string _a0, std::string _a1) { _append0 (fmt::format (_s, _a0, _a1)); };
-		_append2 ("inline IEnumerator<int> {}::_try_parse{} (int _pos) {{	", _parent_class_name, Suffix);
-		_append0 ("	Parser->SetErrorPos (_pos);								");
-		_append1 ("	if (Parser->TryMatchString (_pos, \"{}\")) {{			", Content);
-		_append2 ("		Value{} = \"{}\";									", Suffix, Content);
-		_append1 ("		co_yield _pos + Value{}.size ();					", Suffix);
-		_append1 ("		Value{} = \"\";										", Suffix);
-		_append0 ("	}														");
-		if (RType::min_0 (RepeatType)) {
-			_append0 ("	co_yield _pos;										");
+		_append2 ("inline IEnumerator<int> {}::_try_parse{} (int _pos) {{		", _parent_class_name, Suffix);
+		_append0 ("	Parser->SetErrorPos (_pos);									");
+		if (Reverse) {
+			_append1 ("	int _len = Parser->MatchReverseString (_pos, \"{}\");	", Content);
+			_append1 ("	Value{} = Parser->GetPartCode (_pos, _len);				", Suffix);
+			_append1 ("	co_yield _pos + Value{}.size ();						", Suffix);
+			_append1 ("	Value{} = \"\";											", Suffix);
+		} else {
+			_append1 ("	if (Parser->TryMatchString (_pos, \"{}\")) {{			", Content);
+			_append2 ("		Value{} = \"{}\";									", Suffix, Content);
+			_append1 ("		co_yield _pos + Value{}.size ();					", Suffix);
+			_append1 ("		Value{} = \"\";										", Suffix);
+			_append0 ("	}														");
 		}
-		_append0 ("}														");
+		if ((!Reverse) && RType::min_0 (RepeatType)) {
+			_append0 ("	co_yield _pos;											");
+		}
+		_append0 ("}															");
 		return _sb.str ();
 	}
 

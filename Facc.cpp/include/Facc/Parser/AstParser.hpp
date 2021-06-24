@@ -58,6 +58,14 @@ public:
 		return m_code[_pos];
 	}
 
+	int MatchReverseString (int _pos, std::string _s) {
+		size_t _p = m_code.find (_s, _pos);
+		return (int) ((_p == std::string::npos ? m_code.length () : _p) - _pos);
+	}
+	std::string GetPartCode (int _pos, int _len) {
+		return m_code.substr (_pos, _pos + _len);
+	}
+
 	bool TryMatchString (int _pos, std::string _s) {
 		if (m_code.size () < _pos + _s.size ())
 			return false;

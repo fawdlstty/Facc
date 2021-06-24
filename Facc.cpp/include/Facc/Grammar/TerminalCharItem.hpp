@@ -19,6 +19,7 @@ public:
 	TerminalCharItem (std::string _content): Content (_content) {}
 
 	std::string Content;
+	bool Reverse = false;
 
 	std::string GetClearStrings () override {
 		return fmt::format ("Value{} = \"\";", Suffix);
@@ -29,7 +30,7 @@ public:
 		auto _append0 = [&_sb] (std::string _s) { _sb << Common::trim_end (_s) << "\r\n"; };
 		auto _append1 = [&_append0] (std::string _s, std::string _a0) { _append0 (fmt::format (_s, _a0)); };
 		auto _append2 = [&_append0] (std::string _s, std::string _a0, std::string _a1) { _append0 (fmt::format (_s, _a0, _a1)); };
-		if (RType::max_1 (RepeatType)) {
+		if (RType::max_1 (RepeatType) && (!Reverse)) {
 			_append2 ("inline IEnumerator<int> {}::_try_parse{} (int _pos) {{				", _parent_class_name, Suffix);
 			_append0 ("	Parser->SetErrorPos (_pos);											");
 			_append1 ("	Value{} = \"\";														", Suffix);
@@ -132,6 +133,8 @@ private:
 		for (ITItem *_item : _items)
 			delete _item;
 		_items.clear ();
+		if (Reverse)
+			_ret = fmt::format ("!({})", _ret);
 		return _ret;
 	}
 };
