@@ -26,10 +26,10 @@ namespace Facc.Example {
 public void Process () {
 	while (Value_1.Count > 1) {
 		int _pos = 0;
-		string _sign = Value_1 [0].Value_1_0.Sign;
+		string _sign = Value_1 [0].Value_1_0.Value_1_0_0.Sign;
 		for (int i = 1; i < Value_1.Count; ++i) {
-			if (s_level[Value_1[i].Value_1_0.Sign] > s_level[_sign]) {
-				_sign = Value_1[i].Value_1_0.Sign;
+			if (s_level[Value_1[i].Value_1_0.Value_1_0_0.Sign] > s_level[_sign]) {
+				_sign = Value_1[i].Value_1_0.Value_1_0_0.Sign;
 				_pos = i;
 			}
 		}
@@ -43,19 +43,21 @@ public void Process () {
 			Value_1.RemoveAt (0);
 		} else {
 			Value_1[_pos - 1] = new Op2ExprAST_1 {
-				Value_1_0 = Value_1[_pos - 1].Value_1_0,
-				Value_1_1 = new ExprAST {
-					ValidIndex = 2, Value_2 = new Op2ExprAST {
-						Value_0 = Value_1[_pos - 1].Value_1_1,
-						Value_1 = new List<Op2ExprAST_1> { Value_1[_pos], },
-					}
+				Value_1_0 = new Op2ExprAST_1_0 {
+					Value_1_0_0 = Value_1[_pos - 1].Value_1_0.Value_1_0_0,
+					Value_1_0_1 = new ExprAST {
+						ValidIndex = 2, Value_2 = new Op2ExprAST {
+							Value_0 = Value_1[_pos - 1].Value_1_0.Value_1_0_1,
+							Value_1 = new List<Op2ExprAST_1> { Value_1[_pos], },
+						}
+					},
 				},
 			};
 			Value_1.RemoveAt (_pos);
 		}
 	}
 	Value_0.Process ();
-	Value_1[0].Value_1_1.Process ();
+	Value_1[0].Value_1_0.Value_1_0_1.Process ();
 }",
 
 			// 协助调整优先级
@@ -109,19 +111,19 @@ expr				::= num | op0_expr | op2_expr
 		}
 
 		static void parse () {
-			//var _ast_parser = new AstParser ();
-			//var _root = _ast_parser.Parse<ASTs.ExprAST> ("3+2*5-4");
-			//if (_root != null) {
-			//	Console.WriteLine ();
-			//	_root.Process ();
-			//	_root.PrintTree (0);
-			//} else {
-			//	var _err =_ast_parser.Error;
-			//	Console.WriteLine ();
-			//	Console.WriteLine ($"Error in Line {_err.Line}: {_err.ErrorInfo}");
-			//	Console.WriteLine (_err.LineCode);
-			//	Console.WriteLine ($"{new string (' ', _err.LinePos)}^");
-			//}
+			var _ast_parser = new AstParser ();
+			var _root = _ast_parser.Parse<ASTs.ExprAST> ("3+2*5-4");
+			if (_root != null) {
+				Console.WriteLine ();
+				_root.Process ();
+				_root.PrintTree (0);
+			} else {
+				var _err =_ast_parser.Error;
+				Console.WriteLine ();
+				Console.WriteLine ($"Error in Line {_err.Line}: {_err.ErrorInfo}");
+				Console.WriteLine (_err.LineCode);
+				Console.WriteLine ($"{new string (' ', _err.LinePos)}^");
+			}
 			//var _ast_parser = new AstParser ();
 			//var _root = _ast_parser.Parse<ASTs.UseExprAST> ("use fa;");
 			//if (_root != null) {

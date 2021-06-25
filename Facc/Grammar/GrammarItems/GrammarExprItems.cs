@@ -248,7 +248,7 @@ namespace Facc.Grammar.GrammarItems {
 		}
 
 		public string GetClearStrings () {
-			if (RepeatType.max_N ()) {
+			if (/*RepeatType.max_N () && InitRecognize*/false) {
 				return $"Value{Suffix}.Clear ();";
 			} else {
 				return $"Value{Suffix} = null;";
@@ -291,7 +291,7 @@ namespace Facc.Grammar.GrammarItems {
 		public string GenerateTryParse2Wrap () {
 			StringBuilder _sb = new StringBuilder ();
 			Action<string> _append = (s) => _sb.Append (new string ('\t', 2)).Append (s.TrimEnd ()).Append ("\r\n");
-			if (RepeatType.max_N ()) {
+			if (/*RepeatType.max_N () && InitRecognize*/false) {
 				if (ChildItems.Count != 1)
 					throw new MethodAccessException ("需调用 ProcessConstruct 更新列结构");
 				_append ($"IEnumerator<int> _try_parse{Suffix}_0 (int _pos) {{			");
@@ -367,7 +367,7 @@ namespace Facc.Grammar.GrammarItems {
 			} if (RepeatType.min_0 ()) {
 				return "true";
 			} else if (ChildItems.Count == 1) {
-				if (RepeatType.max_N ()) {
+				if (/*RepeatType.max_N () && InitRecognize*/false) {
 					if (ChildItems[0].RepeatType.min_0 ()) {
 						return "true";
 					} else {
@@ -415,7 +415,7 @@ namespace Facc.Grammar.GrammarItems {
 		public string PrintTree () {
 			StringBuilder _sb = new StringBuilder ();
 			Action<string> _append = (s) => _sb.Append (new string ('\t', 3)).Append (s.TrimEnd ()).Append ("\r\n");
-			if (RepeatType.max_N ()) {
+			if (/*RepeatType.max_N () && InitRecognize*/false) {
 				if (ChildItems.Count != 1)
 					throw new MethodAccessException ("需调用 ProcessConstruct 更新列结构");
 				_append ($"for (int i = 0; i < Value{Suffix}_{0}.Count; ++i)						");
@@ -468,7 +468,7 @@ namespace Facc.Grammar.GrammarItems {
 			StringBuilder _sb = new StringBuilder ();
 			Action<string> _append = (s) => _sb.Append (new string ('\t', 2)).Append (s.TrimEnd ()).Append ("\r\n");
 
-			if (RepeatType.max_N ()) {
+			if (/*RepeatType.max_N () && InitRecognize*/false) {
 				if (ChildItems.Count != 1)
 					throw new MethodAccessException ("需调用 ProcessConstruct 更新列结构");
 				_append ($"public List<{ClassName}{Suffix}_{0}> Value{Suffix}_{0} {{ get; set; }} = new List<{ClassName}{Suffix}_{0}> ();	");
@@ -495,7 +495,7 @@ namespace Facc.Grammar.GrammarItems {
 
 		public string LengthExpr () {
 			StringBuilder _sb = new StringBuilder ();
-			if (RepeatType.max_N ()) {
+			if (/*RepeatType.max_N () && InitRecognize*/false) {
 				if (ChildItems.Count != 1)
 					throw new MethodAccessException ("需调用 ProcessConstruct 更新列结构");
 				_sb.Append ($"(from p in Value{Suffix}_{0} select p.Length).Sum ()");
