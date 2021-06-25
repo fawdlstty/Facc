@@ -138,7 +138,7 @@ public:
 			std::string _class_name = Common::get_classname (_id);
 			std::string _expr_tmp = std::string (_expr);
 			auto _items = GrammarExprItems::ParseItems (std::string (_id), _class_name, _expr_tmp);
-			_items->ProcessConstruct ();
+			_items = _items->WrapGrammarExprItems ();
 			std::vector<std::string> _non_terminals;
 			_items->GetNonterminals (_non_terminals);
 			std::string _path = m_path;

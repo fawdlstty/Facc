@@ -19,7 +19,7 @@
 
 
 
-class GrammarExprItems: public IGrammarExprItem {
+class GrammarExprItems: public IGrammarExprItem, public std::enable_shared_from_this<GrammarExprItems> {
 public:
 	GrammarExprItems (std::string _ebnf_id, std::string _class_name, std::string _expr): EbnfId (_ebnf_id), ClassName (_class_name), Expr (_expr) {}
 
@@ -125,6 +125,7 @@ public:
 				_nonterminal_items->InitRecognize = false;
 				_expr = Common::trim (_expr);
 				_nonterminal_items->SetSuffix (fmt::format ("{}_{}", _items->Suffix, _items->ChildItems.size ()));
+				_nonterminal_items->Expr = _nonterminal_items->Expr.substr (1, _nonterminal_items->Expr.rfind (')') - 1);
 				_items->ChildItems.push_back (_nonterminal_items);
 			} else {
 				// ID
@@ -176,40 +177,50 @@ public:
 		return _items;
 	}
 
-	void ProcessConstruct (bool _init = true) {
-		// 递归处理，放前面的原因是，先处理好子节点，再处理当前节点
-		for (auto &_child : ChildItems) {
-			auto _child_item = dynamic_cast<GrammarExprItems *> (_child.get ());
-			if (_child_item)
-				_child_item->ProcessConstruct (false);
+	std::shared_ptr<GrammarExprItems> WrapGrammarExprItems () {
+		if (RType::max_N (RepeatType) && InitRecognize) {
+			std::string _items_ebnf = fmt::format ("[wrap of] {}", EbnfId);
+			auto _items = std::make_shared<GrammarExprItems> (_items_ebnf, ClassName, Expr);
+			_items->ListType = ExprItemListType::All;
+			_items->InitRecognize = true;
+			InitRecognize = false;
+			_items->RepeatType = EbnfExprItemRepeatType::_1;
+			_items->ChildItems.push_back (shared_from_this ());
+			_items->SetSuffix (""); // 重置子元素后缀
+			return _items;
+		} else {
+			return shared_from_this ();
 		}
+		//// 递归处理，放前面的原因是，先处理好子节点，再处理当前节点
+		//for (auto &_child : ChildItems) {
+		//	auto _child_item = dynamic_cast<GrammarExprItems *> (_child.get ());
+		//	if (_child_item)
+		//		_child_item->ProcessConstruct (false);
+		//}
 
-		// 调整当前节点结构
-		if (RType::is_1 (RepeatType)) {
-			//// 当前元素重复类型为1
-			//// 如果子元素只有一个，并且重复类型不为1，那么与当前元素交换重复类型
-			//if (ChildItems.Count == 1 && (!ChildItems[0].RepeatType.is_1 ())) {
-			//	(RepeatType, ChildItems[0].RepeatType) = (ChildItems[0].RepeatType, RepeatType);
-			//}
-		} else if (RType::max_N (RepeatType)) {
-			// 当前元素重复类型为0N或1N
-			// 如果子元素不止一个，那么加入中间元素
-			if (ChildItems.size () > 1) {
-				std::string _items_ebnf = EbnfId;
-				if (!(EbnfId.size () > 10 && EbnfId.substr (0, 10) == "[part of] "))
-					_items_ebnf = fmt::format ("[part of] {}", EbnfId);
-				auto _items = std::make_shared<GrammarExprItems> (_items_ebnf, ClassName, Expr.substr (0, Expr.size () - 1));
-				_items->ListType = ListType;
-				ListType = ExprItemListType::All;
-				_items->InitRecognize = false;
-				_items->RepeatType = EbnfExprItemRepeatType::_1;
-				_items->ChildItems.swap (ChildItems);
-				ChildItems.push_back (_items);
-			}
-		}
-
-		if (_init)
-			SetSuffix (Suffix); // 重置子元素后缀
+		//// 调整当前节点结构
+		//if (RType::is_1 (RepeatType)) {
+		//	//// 当前元素重复类型为1
+		//	//// 如果子元素只有一个，并且重复类型不为1，那么与当前元素交换重复类型
+		//	//if (ChildItems.Count == 1 && (!ChildItems[0].RepeatType.is_1 ())) {
+		//	//	(RepeatType, ChildItems[0].RepeatType) = (ChildItems[0].RepeatType, RepeatType);
+		//	//}
+		//} else if (RType::max_N (RepeatType)) {
+		//	// 当前元素重复类型为0N或1N
+		//	// 如果子元素不止一个，那么加入中间元素
+		//	if (ChildItems.size () > 1) {
+		//		std::string _items_ebnf = EbnfId;
+		//		if (!(EbnfId.size () > 10 && EbnfId.substr (0, 10) == "[part of] "))
+		//			_items_ebnf = fmt::format ("[part of] {}", EbnfId);
+		//		auto _items = std::make_shared<GrammarExprItems> (_items_ebnf, ClassName, Expr.substr (0, Expr.size () - 1));
+		//		_items->ListType = ListType;
+		//		ListType = ExprItemListType::All;
+		//		_items->InitRecognize = false;
+		//		_items->RepeatType = EbnfExprItemRepeatType::_1;
+		//		_items->ChildItems.swap (ChildItems);
+		//		ChildItems.push_back (_items);
+		//	}
+		//}
 	}
 
 	std::string ClassCode () {
@@ -291,68 +302,39 @@ public:
 		_append0 ("																					");
 		_append2 ("inline int {}{}::size () {{														", ClassName, Suffix);
 		_append0 ("	int _len = 0;																	");
-		if (RType::max_N (RepeatType)) {
-			if (ChildItems.size () != 1)
-				throw Exception ("需调用 ProcessConstruct 更新列结构");
-			_append2_ ("	for (size_t i = 0; i < Value{}_{}.size (); ++i)							", Suffix, 0);
-			_append2_ ("		_len += Value{}_{} [i]->size ();									", Suffix, 0);
-		} else {
-			for (size_t i = 0; i < ChildItems.size (); ++i) {
-				GrammarExprItems *_items = dynamic_cast<GrammarExprItems *> (ChildItems [i].get ());
-				NonTerminalItem *_non_term_item = dynamic_cast<NonTerminalItem *> (ChildItems [i].get ());
-				if (_items || _non_term_item) {
-					if (RType::max_N (ChildItems [i]->RepeatType)) {
-						_append2_ ("	for (size_t i = 0; i < Value{}_{}.size (); ++i)				", Suffix, i);
-						_append2_ ("		_len += Value{}_{} [i]->size ();						", Suffix, i);
-					} else {
-						_append2_ ("	_len += Value{}_{}->size ();								", Suffix, i);
-					}
+		for (size_t i = 0; i < ChildItems.size (); ++i) {
+			GrammarExprItems *_items = dynamic_cast<GrammarExprItems *> (ChildItems [i].get ());
+			NonTerminalItem *_non_term_item = dynamic_cast<NonTerminalItem *> (ChildItems [i].get ());
+			if (_items || _non_term_item) {
+				if (RType::max_N (ChildItems [i]->RepeatType)) {
+					_append2_ ("	for (size_t i = 0; i < Value{}_{}.size (); ++i)				", Suffix, i);
+					_append2_ ("		_len += Value{}_{} [i]->size ();						", Suffix, i);
 				} else {
-					TerminalCharItem *_term_ch_item = dynamic_cast<TerminalCharItem *> (ChildItems [i].get ());
-					if (_term_ch_item) {
-						_append2_ ("	_len += Value{}_{}.size ();									", Suffix, i);
+					_append2_ ("	_len += Value{}_{}->size ();								", Suffix, i);
+				}
+			} else {
+				TerminalCharItem *_term_ch_item = dynamic_cast<TerminalCharItem *> (ChildItems [i].get ());
+				if (_term_ch_item) {
+					_append2_ ("	_len += Value{}_{}.size ();									", Suffix, i);
+				} else {
+					if (RType::max_N (ChildItems [i]->RepeatType)) {
+						_append2_ ("	for (size_t i = 0; i < Value{}_{}.size (); ++i)			", Suffix, i);
+						_append2_ ("		_len += Value{}_{} [i]->size ();					", Suffix, i);
 					} else {
-						if (RType::max_N (ChildItems [i]->RepeatType)) {
-							_append2_ ("	for (size_t i = 0; i < Value{}_{}.size (); ++i)			", Suffix, i);
-							_append2_ ("		_len += Value{}_{} [i]->size ();					", Suffix, i);
-						} else {
-							_append2_ ("	_len += Value{}_{}.size ();								", Suffix, i);
-						}
+						_append2_ ("	_len += Value{}_{}.size ();								", Suffix, i);
 					}
 				}
 			}
 		}
 		_append0 ("	return _len;																");
 		_append0 ("}																			");
-		if (RType::max_N (RepeatType)) {
-			if (ChildItems.size () != 1)
-				throw Exception ("需调用 ProcessConstruct 更新列结构");
-			_append3 ("inline IEnumerator<int> {}{}::_try_parse{}_0 (int _pos) {{			", ClassName, Suffix, Suffix);
-			_append0 ("	Parser->SetErrorPos (_pos);											");
-			_append2 ("	auto _o = std::make_shared<{}{}_0> ();								", ClassName, Suffix);
-			_append0 ("	_o->Parser = Parser;												");
-			_append0 ("	auto _enum = _o->TryParse (_pos);									");
-			_append0 ("	while (_enum.MoveNext ()) {											");
-			_append1 ("		Value{}_0.push_back (_o);										", Suffix);
-			_append0 ("		co_yield _enum.Current;											");
-			_append1 ("		auto _enum1 = _try_parse{}_0 (_enum.Current);					", Suffix);
-			_append0 ("		while (_enum1.MoveNext ())										");
-			_append0 ("			co_yield _enum1.Current;									");
-			_append3 ("		Value{}_0.erase (Value{}_0.begin () + Value{}_0.size () - 1);	", Suffix, Suffix, Suffix);
-			_append0 ("	}																	");
-			if (RType::min_0 (RepeatType)) {
-				_append0 ("	co_yield _pos;													");
-			}
-			_append0 ("}																	");
-		} else {
-			for (size_t i = 0; i < ChildItems.size (); ++i)
-				_sb << ChildItems [i]->GenerateTryParse2 (fmt::format ("{}{}", ClassName, Suffix)) << "\r\n";
-		}
+		for (size_t i = 0; i < ChildItems.size (); ++i)
+			_sb << ChildItems [i]->GenerateTryParse2 (fmt::format ("{}{}", ClassName, Suffix)) << "\r\n";
 		return Common::remove_rn (_sb);
 	}
 
 	std::string GetClearStrings () override {
-		if (RType::max_N (RepeatType)) {
+		if (/*RType::max_N (RepeatType) && InitRecognize*/false) {
 			return fmt::format ("Value{}.clear ();", Suffix);
 		} else {
 			return fmt::format ("Value{} = nullptr;", Suffix);
@@ -390,6 +372,11 @@ public:
 				_append2_ ("	co_yield {}_{}_enum.Current;			", Suffix, i);
 				_append0 ("}											");
 			}
+		}
+		if (RType::min_0 (RepeatType)) {
+			if (ListType == ExprItemListType::Any)
+				_append1 ("ValidIndex{} = -1;							", Suffix);
+			_append0 ("co_yield _pos;									");
 		}
 		return Common::remove_rn (_sb);
 	}
@@ -454,18 +441,10 @@ public:
 		} if (RType::min_0 (RepeatType)) {
 			return "true";
 		} else if (ChildItems.size () == 1) {
-			if (RType::max_N (RepeatType)) {
-				if (RType::min_0 (ChildItems [0]->RepeatType)) {
-					return "true";
-				} else {
-					return fmt::format ("Value{}_0.size () > 0", Suffix);
-				}
+			if (dynamic_cast<TerminalCharItem *> (ChildItems [0].get ()) || dynamic_cast<TerminalStringItem *> (ChildItems [0].get ()) || dynamic_cast<NonTerminalItem *> (ChildItems [0].get ())) {
+				return fmt::format ("Value{}_0->IsValid ()", Suffix);
 			} else {
-				if (dynamic_cast<TerminalCharItem *> (ChildItems [0].get ()) || dynamic_cast<TerminalStringItem *> (ChildItems [0].get ()) || dynamic_cast<NonTerminalItem *> (ChildItems [0].get ())) {
-					return fmt::format ("Value{}_0->IsValid ()", Suffix);
-				} else {
-					return fmt::format ("Value{}_0.size () > 0", Suffix);
-				}
+				return fmt::format ("Value{}_0.size () > 0", Suffix);
 			}
 		} else {
 			std::stringstream _sb;
@@ -509,12 +488,7 @@ public:
 		auto _append2_ = [&_append0] (std::string _s, std::string _a0, size_t _a1) { _append0 (fmt::format (_s, _a0, _a1)); };
 		auto _append3_ = [&_append0] (std::string _s, std::string _a0, std::string _a1, size_t _a2) { _append0 (fmt::format (_s, _a0, _a1, _a2)); };
 		auto _append4_ = [&_append0] (std::string _s, std::string _a0, size_t _a1, std::string _a2, size_t _a3) { _append0 (fmt::format (_s, _a0, _a1, _a2, _a3)); };
-		if (RType::max_N (RepeatType)) {
-			if (ChildItems.size () != 1)
-				throw Exception ("需调用 ProcessConstruct 更新列结构");
-			_append1 ("for (size_t i = 0; i < Value{}_0.size (); ++i)						", Suffix);
-			_append1 ("	Value{}_0 [i]->PrintTree (_indent + 1);								", Suffix);
-		} else if (ListType == ExprItemListType::All) {
+		if (ListType == ExprItemListType::All) {
 			for (size_t i = 0; i < ChildItems.size (); ++i) {
 				NonTerminalItem *_item = dynamic_cast<NonTerminalItem *> (ChildItems [i].get ());
 				if (_item) {
@@ -581,26 +555,20 @@ public:
 		auto _append1 = [&_append0] (std::string _s, std::string _a0) { _append0 (fmt::format (_s, _a0)); };
 		auto _append1_ = [&_append0] (std::string _s, size_t _a0) { _append0 (fmt::format (_s, _a0)); };
 		auto _append5_ = [&_append0] (std::string _s, std::string _a0, std::string _a1, size_t _a2, std::string _a3, size_t _a4) { _append0 (fmt::format (_s, _a0, _a1, _a2, _a3, _a4)); };
-		if (RType::max_N (RepeatType)) {
-			if (ChildItems.size () != 1)
-				throw Exception ("需调用 ProcessConstruct 更新列结构");
-			_append5_ ("std::vector<std::shared_ptr<{}{}_{}>> Value{}_{};						", ClassName, Suffix, 0, Suffix, 0);
-		} else {
-			for (size_t i = 0; i < ChildItems.size (); ++i) {
-				GrammarExprItems *_items = dynamic_cast<GrammarExprItems *> (ChildItems [i].get ());
-				if (_items) {
-					if (RType::max_N (_items->RepeatType)) {
-						_append5_ ("std::vector<std::shared_ptr<{}{}_{}>> Value{}_{};			", ClassName, Suffix, i, Suffix, i);
-					} else {
-						_append5_ ("std::shared_ptr<{}{}_{}> Value{}_{};						", ClassName, Suffix, i, Suffix, i);
-					}
+		for (size_t i = 0; i < ChildItems.size (); ++i) {
+			GrammarExprItems *_items = dynamic_cast<GrammarExprItems *> (ChildItems [i].get ());
+			if (_items) {
+				if (RType::max_N (_items->RepeatType)) {
+					_append5_ ("std::vector<std::shared_ptr<{}{}_{}>> Value{}_{};			", ClassName, Suffix, i, Suffix, i);
 				} else {
-					_append0 (ChildItems [i]->MValue ());
+					_append5_ ("std::shared_ptr<{}{}_{}> Value{}_{};						", ClassName, Suffix, i, Suffix, i);
 				}
+			} else {
+				_append0 (ChildItems [i]->MValue ());
 			}
-			if (ListType == ExprItemListType::Any) {
-				_append1 ("int ValidIndex{} = -1;												", Suffix);
-			}
+		}
+		if (ListType == ExprItemListType::Any) {
+			_append1 ("int ValidIndex{} = -1;												", Suffix);
 		}
 		return Common::remove_rn (_sb);
 	}
